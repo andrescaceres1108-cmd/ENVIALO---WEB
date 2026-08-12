@@ -43,16 +43,29 @@ export default function TagCard({
       onRequireAuth();
       return;
     }
+    // Abrimos la pestaña ya (dentro del gesto de clic del usuario) para que
+    // el navegador no la bloquee como popup; la redirigimos cuando tengamos
+    // el número.
+    const newTab = window.open("", "_blank");
     setLoading(true);
     setError(null);
     const res = await obtenerContactoAction(anuncio.id);
     setLoading(false);
     if (res.error || !res.whatsapp) {
       setError(res.error ?? "No se pudo obtener el contacto.");
+      newTab?.close();
       return;
     }
     setWa(res.whatsapp);
-    window.open(`https://wa.me/${res.whatsapp.replace(/[^0-9]/g, "")}`, "_blank", "noopener");
+    const url = `https://wa.me/${res.whatsapp.replace(/[^0-9]/g, "")}`;
+    if (newTab) {
+      newTab.location.href = url;
+    } else {
+      // El navegador bloqueó la apertura anticipada; probamos igual con un
+      // clic directo del usuario (el enlace "Abrir WhatsApp" de abajo queda
+      // como respaldo).
+      window.open(url, "_blank", "noopener");
+    }
   }
 
   return (

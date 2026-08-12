@@ -1,23 +1,17 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Space_Grotesk, IBM_Plex_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import "./globals.css";
 
-const archivoBlack = Archivo_Black({
-  variable: "--font-archivo-black",
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  weight: "400",
+  weight: ["400", "500", "600", "700"],
 });
 
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
   weight: ["400", "500", "600"],
 });
@@ -32,7 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="es"
-      className={`${archivoBlack.variable} ${spaceGrotesk.variable} ${ibmPlexMono.variable}`}
+      className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
         <Header />

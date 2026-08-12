@@ -23,7 +23,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ENVIALO — Envíos entre USA y Colombia con viajeros",
+  title: "SendGO — Envíos entre USA y Colombia con viajeros",
   description:
     "Tablón de anuncios que conecta viajeros con espacio en su maleta con personas que necesitan enviar cosas entre el DMV y Colombia.",
 };

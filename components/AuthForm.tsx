@@ -103,7 +103,7 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
                 <p className="field-error">{signupState.errors.cedula}</p>
               )}
               <p className="field-hint">
-                Solo se usa para identificarte en la plataforma. ENVIALO no la comparte con terceros.
+                Solo se usa para identificarte en la plataforma. SendGO no la comparte con terceros.
               </p>
             </div>
           )}

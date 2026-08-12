@@ -9,9 +9,11 @@ import AuthModal from "@/components/AuthModal";
 export default function AnunciosList({
   anuncios,
   isAuthenticated,
+  currentUserId,
 }: {
   anuncios: AnuncioPublico[];
   isAuthenticated: boolean;
+  currentUserId: string | null;
 }) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<"todos" | "usa-co" | "co-usa">("todos");
@@ -69,6 +71,7 @@ export default function AnunciosList({
               key={a.id}
               anuncio={a}
               isAuthenticated={isAuthenticated}
+              isOwner={currentUserId !== null && currentUserId === a.user_id}
               onRequireAuth={() => setShowAuthModal(true)}
             />
           ))}

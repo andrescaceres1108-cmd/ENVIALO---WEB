@@ -235,6 +235,31 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .btn-wa:hover { background: var(--accent-deep); }
 .pill-name { font-family: var(--font-geist-mono), monospace; font-size: .7rem; color: var(--muted); }
+
+.tag-menu { position: absolute; top: 10px; right: 10px; z-index: 5; }
+.tag-menu-btn {
+  width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-soft);
+  background: var(--bg-elevated); color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; line-height: 1; transition: .15s;
+}
+.tag-menu-btn:hover { color: var(--fg); border-color: var(--border); background: var(--bg); }
+.tag-menu-dropdown {
+  position: absolute; top: 34px; right: 0; min-width: 130px;
+  background: var(--bg-elevated); border: 1px solid var(--border-soft); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35); overflow: hidden; z-index: 6;
+  display: flex; flex-direction: column;
+}
+.tag-menu-dropdown button {
+  background: none; border: none; text-align: left; padding: 9px 12px;
+  font-family: var(--font-geist-sans), sans-serif; font-size: .82rem; color: var(--fg);
+  cursor: pointer; transition: .1s;
+}
+.tag-menu-dropdown button:hover { background: var(--bg); }
+.tag-menu-dropdown button.danger { color: #f87171; }
+.tag-menu-dropdown button.danger:hover { background: rgba(248, 113, 113, .1); }
+.tag-menu-dropdown button:disabled { opacity: .6; cursor: default; }
+
 .empty {
   text-align: center; padding: 60px 20px; color: var(--muted);
   border: 1px dashed var(--border); border-radius: 16px; background: var(--bg-elevated);

@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { obtenerContactoAction } from "@/lib/actions";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { obtenerContactoAction, borrarAnuncioAction } from "@/lib/actions";
+import EditAnuncioModal from "@/components/EditAnuncioModal";
 
 export type AnuncioPublico = {
   id: string;
+  user_id: string;
   direccion: "usa-co" | "co-usa";
   ciudad_origen: string;
   ciudad_destino: string;
@@ -28,15 +31,65 @@ function code(city: string) {
 export default function TagCard({
   anuncio,
   isAuthenticated,
+  isOwner = false,
   onRequireAuth,
 }: {
   anuncio: AnuncioPublico;
   isAuthenticated: boolean;
+  isOwner?: boolean;
   onRequireAuth: () => void;
 }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [wa, setWa] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
+  const [whatsappEdit, setWhatsappEdit] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [menuOpen]);
+
+  async function handleEditar() {
+    setMenuOpen(false);
+    setLoadingEdit(true);
+    const res = await obtenerContactoAction(anuncio.id);
+    setLoadingEdit(false);
+    if (res.error || !res.whatsapp) {
+      setError(res.error ?? "No se pudo cargar el anuncio para editar.");
+      return;
+    }
+    setWhatsappEdit(res.whatsapp);
+    setEditing(true);
+  }
+
+  async function handleBorrar() {
+    setMenuOpen(false);
+    const confirmado = window.confirm("¿Seguro que quieres borrar este anuncio?");
+    if (!confirmado) return;
+    setDeleting(true);
+    const res = await borrarAnuncioAction(anuncio.id);
+    setDeleting(false);
+    if (!res.ok) {
+      setError(res.message ?? "No se pudo borrar el anuncio.");
+      return;
+    }
+    setDeleted(true);
+    router.refresh();
+  }
 
   async function handleContacto() {
     if (!isAuthenticated) {
@@ -68,8 +121,40 @@ export default function TagCard({
     }
   }
 
+  if (deleted) return null;
+
   return (
+    <>
     <article className="tag-card">
+      {isOwner && (
+        <div className="tag-menu" ref={menuRef}>
+          <button
+            type="button"
+            className="tag-menu-btn"
+            aria-label="Opciones del anuncio"
+            aria-haspopup="true"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            ⋮
+          </button>
+          {menuOpen && (
+            <div className="tag-menu-dropdown">
+              <button type="button" onClick={handleEditar} disabled={loadingEdit}>
+                {loadingEdit ? "Cargando…" : "Editar"}
+              </button>
+              <button
+                type="button"
+                className="danger"
+                onClick={handleBorrar}
+                disabled={deleting}
+              >
+                {deleting ? "Borrando…" : "Borrar"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
       <div className="tag-spine">
         <i></i>
         <i></i>
@@ -128,5 +213,17 @@ export default function TagCard({
         {error && <p className="field-error">{error}</p>}
       </div>
     </article>
+    {editing && whatsappEdit && (
+      <EditAnuncioModal
+        anuncio={anuncio}
+        whatsappInicial={whatsappEdit}
+        onClose={() => setEditing(false)}
+        onSaved={() => {
+          setEditing(false);
+          router.refresh();
+        }}
+      />
+    )}
+    </>
   );
 }

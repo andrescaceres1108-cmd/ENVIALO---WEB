@@ -122,3 +122,29 @@ create policy "contacto: solo el dueño del anuncio inserta su contacto"
 -- Nota (mejora futura, fuera de alcance del MVP): un job de pg_cron que
 -- borre anuncios con fecha_viaje muy en el pasado. Por ahora el listado
 -- simplemente filtra fecha_viaje >= current_date en la consulta.
+
+-- ---------- migración: permitir editar (UPDATE) el propio anuncio ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Antes solo existían políticas de SELECT/INSERT/DELETE; faltaba UPDATE,
+-- necesaria para el botón "Editar" del menú de tres puntos.
+create policy "anuncios: solo el dueño actualiza su anuncio"
+  on public.anuncios for update
+  to authenticated
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "contacto: solo el dueño actualiza su contacto"
+  on public.anuncios_contacto for update
+  to authenticated
+  using (
+    exists (
+      select 1 from public.anuncios a
+      where a.id = anuncio_id and a.user_id = auth.uid()
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.anuncios a
+      where a.id = anuncio_id and a.user_id = auth.uid()
+    )
+  );

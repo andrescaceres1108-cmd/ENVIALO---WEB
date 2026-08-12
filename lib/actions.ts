@@ -132,6 +132,84 @@ export async function publicarAnuncioAction(
   return { ok: true, message: "Anuncio publicado." };
 }
 
+export async function editarAnuncioAction(
+  anuncioId: string,
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Debes iniciar sesión para editar tu anuncio." };
+  }
+
+  const raw = {
+    ...Object.fromEntries(formData),
+    entrega_domicilio: formData.get("entrega_domicilio") === "on",
+    acepto_terminos: formData.get("acepto_terminos") === "on",
+  };
+
+  const parsed = publicarSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, errors: firstErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { whatsapp, ...anuncio } = parsed.data;
+
+  const { data: updated, error } = await supabase
+    .from("anuncios")
+    .update(anuncio)
+    .eq("id", anuncioId)
+    .eq("user_id", user.id)
+    .select("id")
+    .single();
+
+  if (error || !updated) {
+    return { ok: false, message: error?.message ?? "No se pudo actualizar el anuncio." };
+  }
+
+  const { error: contactoError } = await supabase
+    .from("anuncios_contacto")
+    .update({ whatsapp })
+    .eq("anuncio_id", anuncioId);
+
+  if (contactoError) {
+    return { ok: false, message: contactoError.message };
+  }
+
+  revalidatePath("/anuncios");
+  return { ok: true, message: "Anuncio actualizado." };
+}
+
+export async function borrarAnuncioAction(
+  anuncioId: string
+): Promise<{ ok: boolean; message?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  const { error } = await supabase
+    .from("anuncios")
+    .delete()
+    .eq("id", anuncioId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { ok: false, message: "No se pudo borrar el anuncio." };
+  }
+
+  revalidatePath("/anuncios");
+  return { ok: true };
+}
+
 export async function obtenerContactoAction(
   anuncioId: string
 ): Promise<{ whatsapp: string | null; error?: string }> {

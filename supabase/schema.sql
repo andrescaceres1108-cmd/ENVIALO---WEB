@@ -148,3 +148,26 @@ create policy "contacto: solo el dueño actualiza su contacto"
       where a.id = anuncio_id and a.user_id = auth.uid()
     )
   );
+
+-- ---------- migración: borrar la propia cuenta ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- La app (con la clave anon) no tiene permiso para borrar filas de
+-- auth.users directamente, así que exponemos una función "security
+-- definer" (mismo patrón que handle_new_user) que solo puede borrar
+-- la cuenta de quien la invoca (auth.uid()), nunca la de otra persona.
+-- Al borrar el usuario de auth.users, se borra en cascada su fila en
+-- profiles (profiles.id -> auth.users.id on delete cascade) y a su vez
+-- todos sus anuncios y anuncios_contacto (anuncios.user_id -> profiles.id
+-- on delete cascade, anuncios_contacto.anuncio_id -> anuncios.id on
+-- delete cascade).
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+grant execute on function public.delete_own_account() to authenticated;

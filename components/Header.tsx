@@ -1,12 +1,22 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { logOutAction } from "@/lib/actions";
+import UserMenu from "@/components/UserMenu";
 
 export default async function Header() {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  let nombre: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("nombre")
+      .eq("id", user.id)
+      .single();
+    nombre = profile?.nombre ?? null;
+  }
 
   return (
     <header>
@@ -27,9 +37,7 @@ export default async function Header() {
           <Link href="/publicar">Publicar anuncio</Link>
           <Link href="/anuncios">Ver anuncios</Link>
           {user ? (
-            <form action={logOutAction} style={{ display: "inline" }}>
-              <button type="submit">Cerrar sesión</button>
-            </form>
+            <UserMenu nombre={nombre ?? user.email ?? "U"} email={user.email ?? ""} />
           ) : (
             <Link href="/cuenta">Crear cuenta</Link>
           )}

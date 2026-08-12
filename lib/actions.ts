@@ -84,6 +84,27 @@ export async function logOutAction() {
   revalidatePath("/", "layout");
 }
 
+export async function borrarCuentaAction(): Promise<{ ok: boolean; message?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Debes iniciar sesión." };
+  }
+
+  const { error } = await supabase.rpc("delete_own_account");
+
+  if (error) {
+    return { ok: false, message: "No se pudo borrar la cuenta. Intenta de nuevo." };
+  }
+
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
 export async function publicarAnuncioAction(
   _prev: ActionState,
   formData: FormData

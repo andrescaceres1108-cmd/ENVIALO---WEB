@@ -19,23 +19,7 @@ export default async function AnunciosPage() {
     ]);
 
   if (anunciosError) {
-    // DEBUG temporal: diagnosticar por qué prod no muestra anuncios.
-    // TODO: quitar este log una vez resuelto.
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-    const findNonAscii = (s: string) =>
-      Array.from(s)
-        .map((ch, i) => ({ i, code: ch.charCodeAt(0) }))
-        .filter((c) => c.code > 127);
-    console.error("[anuncios] query error:", anunciosError.message, {
-      urlLen: url.length,
-      keyLen: key.length,
-      urlNonAscii: findNonAscii(url),
-      keyNonAscii: findNonAscii(key),
-      urlHead: JSON.stringify(url.slice(0, 12)),
-      keyHead: JSON.stringify(key.slice(0, 12)),
-      keyTail: JSON.stringify(key.slice(-12)),
-    });
+    console.error("[anuncios] query error:", anunciosError.message);
   }
 
   return (

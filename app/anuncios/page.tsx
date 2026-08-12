@@ -6,16 +6,27 @@ export const dynamic = "force-dynamic";
 export default async function AnunciosPage() {
   const supabase = await createClient();
 
-  const [{ data: anuncios }, { data: userData }] = await Promise.all([
-    supabase
-      .from("anuncios")
-      .select(
-        "id, direccion, ciudad_origen, ciudad_destino, entrega_domicilio, fecha_viaje, kilos_disponibles, precio_kilo_usd, nombre_contacto, notas"
-      )
-      .gte("fecha_viaje", new Date().toISOString().slice(0, 10))
-      .order("fecha_viaje", { ascending: true }),
-    supabase.auth.getUser(),
-  ]);
+  const [{ data: anuncios, error: anunciosError }, { data: userData }] =
+    await Promise.all([
+      supabase
+        .from("anuncios")
+        .select(
+          "id, direccion, ciudad_origen, ciudad_destino, entrega_domicilio, fecha_viaje, kilos_disponibles, precio_kilo_usd, nombre_contacto, notas"
+        )
+        .gte("fecha_viaje", new Date().toISOString().slice(0, 10))
+        .order("fecha_viaje", { ascending: true }),
+      supabase.auth.getUser(),
+    ]);
+
+  if (anunciosError) {
+    // DEBUG temporal: diagnosticar por qué prod no muestra anuncios.
+    // TODO: quitar este log una vez resuelto.
+    console.error("[anuncios] query error:", anunciosError.message, {
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      urlLen: process.env.NEXT_PUBLIC_SUPABASE_URL?.length,
+      keyLen: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length,
+    });
+  }
 
   return (
     <AnunciosList

@@ -1,4 +1,4 @@
--- ENVIALO — esquema de base de datos (Supabase / Postgres)
+-- SendGO — esquema de base de datos (Supabase / Postgres)
 -- Correr esto completo en: Supabase Dashboard > SQL Editor > New query
 
 -- ---------- profiles ----------

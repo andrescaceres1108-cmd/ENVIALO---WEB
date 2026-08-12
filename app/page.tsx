@@ -18,7 +18,7 @@ export default function Home() {
           con <em>alguien que ya va</em>.
         </h1>
         <p className="sub">
-          ENVIALO conecta a viajeros con espacio en su maleta con personas que
+          SendGO conecta a viajeros con espacio en su maleta con personas que
           necesitan enviar algo entre Washington DC, Maryland, Virginia y
           cualquier ciudad de Colombia.
         </p>

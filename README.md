@@ -1,11 +1,11 @@
-# ENVIALO
+# SendGO
 
 Tablón de anuncios (crowdshipping) que conecta viajeros con espacio en su
 maleta con personas que necesitan enviar cosas entre el área DMV
 (Washington DC, Maryland, Virginia) y cualquier ciudad de Colombia, en ambas
 direcciones.
 
-**ENVIALO es solo intermediario**: no transporta, no custodia ni verifica
+**SendGO es solo intermediario**: no transporta, no custodia ni verifica
 mercancía, no fija precios y no procesa pagos. Todo acuerdo es directo entre
 viajero y remitente vía WhatsApp.
 

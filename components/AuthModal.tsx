@@ -17,7 +17,7 @@ export default function AuthModal({
         </button>
         <div className="section-head" style={{ padding: "0 0 8px" }}>
           <h2 style={{ fontSize: "1.3rem" }}>Crea tu cuenta para contactar</h2>
-          <p>Necesitas una cuenta en ENVIALO para ver el WhatsApp del viajero.</p>
+          <p>Necesitas una cuenta en SendGO para ver el WhatsApp del viajero.</p>
         </div>
         <AuthForm onSuccess={onSuccess} />
       </div>

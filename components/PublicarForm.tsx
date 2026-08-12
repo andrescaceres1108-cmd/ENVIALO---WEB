@@ -171,7 +171,7 @@ export default function PublicarForm() {
         <input id="whatsapp" name="whatsapp" type="tel" placeholder="Ej: +1 703 555 0123" required />
         {state.errors?.whatsapp && <p className="field-error">{state.errors.whatsapp}</p>}
         <p className="field-hint">
-          Solo lo verán usuarios con cuenta creada en ENVIALO.
+          Solo lo verán usuarios con cuenta creada en SendGO.
         </p>
       </div>
 
@@ -190,7 +190,7 @@ export default function PublicarForm() {
         <div className="check">
           <input type="checkbox" id="acepto_terminos" name="acepto_terminos" required />
           <span>
-            Entiendo que <b>ENVIALO solo publica mi anuncio</b> y no es
+            Entiendo que <b>SendGO solo publica mi anuncio</b> y no es
             responsable de la mercancía, los acuerdos, los pagos ni el
             cumplimiento de normas aduaneras. El trato es directamente entre
             el viajero y el remitente.

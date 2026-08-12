@@ -17,8 +17,8 @@ export default async function Header() {
       </div>
       <div className="header-in">
         <Link href="/" className="logo">
-          ENVIALO
-          <small>USA ⇄ Colombia</small>
+          SendGO
+          <small>Tu envío. Su viaje.</small>
         </Link>
         <nav>
           <Link href="/publicar">Publicar anuncio</Link>

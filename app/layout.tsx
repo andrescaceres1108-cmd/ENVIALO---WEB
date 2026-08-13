@@ -29,6 +29,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body>
+        <div className="bg-glow" aria-hidden="true"></div>
         <Header />
         <main>{children}</main>
         <Footer />

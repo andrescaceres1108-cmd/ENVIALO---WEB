@@ -1,7 +1,12 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { signUpAction, logInAction, type ActionState } from "@/lib/actions";
+import {
+  signUpAction,
+  logInAction,
+  forgotPasswordAction,
+  type ActionState,
+} from "@/lib/actions";
 import SegmentedControl from "@/components/SegmentedControl";
 
 const initialState: ActionState = { ok: false };
@@ -9,12 +14,17 @@ const initialState: ActionState = { ok: false };
 export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   const [tab, setTab] = useState<"signup" | "login">("signup");
   const [pais, setPais] = useState<"usa" | "co">("usa");
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
     signUpAction,
     initialState
   );
   const [loginState, loginFormAction, loginPending] = useActionState(
     logInAction,
+    initialState
+  );
+  const [forgotState, forgotFormAction, forgotPending] = useActionState(
+    forgotPasswordAction,
     initialState
   );
 
@@ -115,6 +125,33 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
             <p className={`form-msg ${signupState.ok ? "ok" : "err"}`}>{signupState.message}</p>
           )}
         </form>
+      ) : forgotOpen ? (
+        <form action={forgotFormAction} noValidate>
+          <div className="field">
+            <label htmlFor="forgot-email">Correo</label>
+            <input id="forgot-email" name="email" type="email" required />
+            {forgotState.errors?.email && (
+              <p className="field-error">{forgotState.errors.email}</p>
+            )}
+            <p className="field-hint">
+              Te enviaremos un enlace para restablecer tu contraseña.
+            </p>
+          </div>
+          <button type="submit" className="btn btn-primary btn-sm" disabled={forgotPending}>
+            {forgotPending ? "Enviando…" : "Enviar enlace"}
+          </button>
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => setForgotOpen(false)}
+            style={{ marginLeft: 10 }}
+          >
+            Volver a iniciar sesión
+          </button>
+          {forgotState.message && (
+            <p className={`form-msg ${forgotState.ok ? "ok" : "err"}`}>{forgotState.message}</p>
+          )}
+        </form>
       ) : (
         <form action={loginFormAction} noValidate>
           <div className="field">
@@ -131,6 +168,9 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
           <button type="submit" className="btn btn-primary btn-sm" disabled={loginPending}>
             {loginPending ? "Ingresando…" : "Iniciar sesión"}
+          </button>
+          <button type="button" className="link-btn" onClick={() => setForgotOpen(true)}>
+            ¿Olvidaste tu contraseña?
           </button>
           {loginState.message && (
             <p className={`form-msg ${loginState.ok ? "ok" : "err"}`}>{loginState.message}</p>

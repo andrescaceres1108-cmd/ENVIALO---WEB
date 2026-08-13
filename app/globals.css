@@ -273,6 +273,14 @@ textarea { resize: vertical; min-height: 72px; }
 .form-msg.ok { color: var(--ok); }
 .form-msg.err { color: var(--red); }
 
+.link-btn {
+  background: none; border: none; padding: 0; margin-top: 12px;
+  display: inline-block; color: var(--muted); font-size: .82rem;
+  text-decoration: underline; cursor: pointer;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.link-btn:hover { color: var(--fg); }
+
 /* ---------- Anuncios (luggage tags) ---------- */
 .filters { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 20px; align-items: center; }
 .filters .seg { max-width: 340px; flex: 1 1 260px; }

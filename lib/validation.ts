@@ -30,6 +30,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Ingresa tu contraseña."),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().email("Correo inválido."),
+});
+
+export const updatePasswordSchema = z
+  .object({
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+    confirmar: z.string().min(1, "Confirma tu nueva contraseña."),
+  })
+  .refine((data) => data.password === data.confirmar, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmar"],
+  });
+
 export const publicarSchema = z
   .object({
     direccion: z.enum(["usa-co", "co-usa"]),

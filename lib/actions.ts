@@ -1,12 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
   signupSchema,
   loginSchema,
+  forgotPasswordSchema,
+  updatePasswordSchema,
   publicarSchema,
 } from "@/lib/validation";
+
+async function getOrigin() {
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+  const proto = h.get("x-forwarded-proto") ?? (isLocal ? "http" : "https");
+  return `${proto}://${host}`;
+}
 
 export type ActionState = {
   ok: boolean;
@@ -76,6 +89,63 @@ export async function logInAction(
 
   revalidatePath("/", "layout");
   return { ok: true, message: "Sesión iniciada." };
+}
+
+export async function forgotPasswordAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const raw = Object.fromEntries(formData);
+  const parsed = forgotPasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, errors: firstErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const supabase = await createClient();
+  const origin = await getOrigin();
+
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${origin}/auth/confirm?next=/cuenta/actualizar-password`,
+  });
+
+  // Mensaje genérico: no revelamos si el correo está registrado o no.
+  return {
+    ok: true,
+    message:
+      "Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.",
+  };
+}
+
+export async function actualizarPasswordAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const raw = Object.fromEntries(formData);
+  const parsed = updatePasswordSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false, errors: firstErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      ok: false,
+      message: "El enlace expiró o no es válido. Solicita uno nuevo desde 'Iniciar sesión'.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: parsed.data.password });
+
+  if (error) {
+    return { ok: false, message: "No se pudo actualizar la contraseña. Intenta de nuevo." };
+  }
+
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Contraseña actualizada." };
 }
 
 export async function logOutAction() {

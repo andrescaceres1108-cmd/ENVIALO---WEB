@@ -5,9 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 export default async function CuentaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next } = await searchParams;
+  const { next, error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,5 +22,15 @@ export default async function CuentaPage({
     return <CuentaView nombre={profile?.nombre ?? "—"} email={user.email ?? ""} />;
   }
 
-  return <AccountView next={next} />;
+  return (
+    <>
+      {error === "enlace_invalido" && (
+        <p className="form-msg err" style={{ marginTop: 24 }}>
+          El enlace para restablecer tu contraseña expiró o no es válido. Solicita uno nuevo
+          desde &quot;Iniciar sesión&quot;.
+        </p>
+      )}
+      <AccountView next={next} />
+    </>
+  );
 }

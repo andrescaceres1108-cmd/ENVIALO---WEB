@@ -12,11 +12,10 @@ export default function Home() {
           <span className="dot"></span>
           <span>DMV</span>
         </div>
-        <h1>
-          Tu encomienda viaja
-          <br />
-          con <em>alguien que ya va</em>.
-        </h1>
+        <h1>Lo que necesitas, cuando lo necesitas.</h1>
+        <p className="tagline">
+          Conectamos tus envíos con personas que ya están viajando.
+        </p>
         <p className="sub">
           SendGO conecta a viajeros con espacio en su maleta con personas que
           necesitan enviar algo entre Washington DC, Maryland, Virginia y

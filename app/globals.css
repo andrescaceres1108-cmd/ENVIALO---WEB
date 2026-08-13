@@ -294,11 +294,20 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .tag-actions { margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .btn-wa {
-  background: var(--accent); color: var(--white); border: none; border-radius: 999px;
+  background: rgba(115, 112, 255, .12);
+  color: #a5a3ff;
+  border: 1px solid rgba(115, 112, 255, .5);
+  border-radius: 999px;
   padding: 9px 16px; font-weight: 600; font-size: .82rem; cursor: pointer;
   font-family: var(--font-geist-sans), sans-serif; transition: .15s; text-decoration: none; display: inline-block;
+  text-shadow: 0 0 10px rgba(115, 112, 255, .8);
+  box-shadow: 0 0 14px rgba(115, 112, 255, .25), inset 0 0 10px rgba(115, 112, 255, .08);
 }
-.btn-wa:hover { background: var(--accent-deep); }
+.btn-wa:hover {
+  background: rgba(115, 112, 255, .2);
+  border-color: rgba(115, 112, 255, .8);
+  box-shadow: 0 0 20px rgba(115, 112, 255, .45), inset 0 0 12px rgba(115, 112, 255, .15);
+}
 .pill-name { font-family: var(--font-geist-mono), monospace; font-size: .7rem; color: var(--muted); }
 
 .tag-menu { position: absolute; top: 10px; right: 10px; z-index: 5; }

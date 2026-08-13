@@ -91,19 +91,31 @@ nav a, nav button {
   text-decoration: none; display: inline-block;
 }
 nav a:hover, nav a.active, nav button:hover, nav button.active {
-  background: var(--accent); border-color: var(--accent); color: var(--white);
+  background: rgba(115, 112, 255, .16);
+  border-color: rgba(115, 112, 255, .6);
+  color: #a5a3ff;
+  text-shadow: 0 0 10px rgba(115, 112, 255, .8);
+  box-shadow: 0 0 14px rgba(115, 112, 255, .25), inset 0 0 10px rgba(115, 112, 255, .08);
 }
 nav a:focus-visible, nav button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 .user-menu { position: relative; }
 .avatar-badge {
   position: relative; width: 38px; height: 38px; border-radius: 50%;
-  background: var(--accent); color: var(--white); border: none; cursor: pointer;
+  background: rgba(115, 112, 255, .16); color: #a5a3ff;
+  border: 1px solid rgba(115, 112, 255, .5); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-geist-sans), sans-serif; font-weight: 700; font-size: 1rem;
   transition: .15s;
+  text-shadow: 0 0 10px rgba(115, 112, 255, .8);
+  box-shadow: 0 0 14px rgba(115, 112, 255, .25), inset 0 0 10px rgba(115, 112, 255, .08);
 }
-nav .avatar-badge:hover { background: var(--accent-deep); color: var(--white); border-color: transparent; }
+nav .avatar-badge:hover {
+  background: rgba(115, 112, 255, .26);
+  border-color: rgba(115, 112, 255, .8);
+  color: #a5a3ff;
+  box-shadow: 0 0 20px rgba(115, 112, 255, .45), inset 0 0 12px rgba(115, 112, 255, .15);
+}
 .avatar-badge:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 .avatar-dot {
   position: absolute; bottom: -1px; right: -1px; width: 12px; height: 12px;
@@ -239,7 +251,12 @@ textarea { resize: vertical; min-height: 72px; }
   font-family: var(--font-geist-mono), monospace; font-size: .8rem; font-weight: 600; color: var(--muted);
   transition: .15s;
 }
-.seg button.on { background: var(--accent); color: var(--white); }
+.seg button.on {
+  background: rgba(115, 112, 255, .16);
+  color: #a5a3ff;
+  text-shadow: 0 0 10px rgba(115, 112, 255, .8);
+  box-shadow: inset 0 0 10px rgba(115, 112, 255, .15);
+}
 
 .check {
   display: flex; gap: 10px; align-items: flex-start;

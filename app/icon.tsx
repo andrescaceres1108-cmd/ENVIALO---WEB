@@ -17,10 +17,10 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           background: "#0a0a0a",
-          border: "2px solid #f5f5f7",
+          border: "1px solid #f5f5f7",
           borderRadius: 7,
           fontFamily: "sans-serif",
-          fontWeight: 700,
+          fontWeight: 900,
           fontSize: 18,
           color: "#f5f5f7",
         }}

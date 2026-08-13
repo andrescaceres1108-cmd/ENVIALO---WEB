@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { obtenerContactoAction, borrarAnuncioAction } from "@/lib/actions";
+import {
+  obtenerContactoAction,
+  borrarAnuncioAction,
+  reportarAnuncioAction,
+} from "@/lib/actions";
 import EditAnuncioModal from "@/components/EditAnuncioModal";
 
 export type AnuncioPublico = {
@@ -51,6 +55,12 @@ export default function TagCard({
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportMotivo, setReportMotivo] = useState("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportDone, setReportDone] = useState(false);
+  const [reportMsg, setReportMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -119,6 +129,30 @@ export default function TagCard({
       // como respaldo).
       window.open(url, "_blank", "noopener");
     }
+  }
+
+  function handleReportToggle() {
+    if (!isAuthenticated) {
+      onRequireAuth();
+      return;
+    }
+    setReportMsg(null);
+    setReportOpen((v) => !v);
+  }
+
+  async function handleReportSubmit(e: FormEvent) {
+    e.preventDefault();
+    setReportSubmitting(true);
+    setReportMsg(null);
+    const res = await reportarAnuncioAction(anuncio.id, reportMotivo);
+    setReportSubmitting(false);
+    if (!res.ok) {
+      setReportMsg(res.message ?? "No se pudo enviar el reporte.");
+      return;
+    }
+    setReportOpen(false);
+    setReportDone(true);
+    setReportMsg(res.message ?? "Reporte enviado.");
   }
 
   if (deleted) return null;
@@ -211,6 +245,45 @@ export default function TagCard({
           <span className="pill-name">{anuncio.nombre_contacto}</span>
         </div>
         {error && <p className="field-error">{error}</p>}
+
+        {!isOwner && (
+          <div className="report-block">
+            {reportDone ? (
+              <p className="field-hint">{reportMsg}</p>
+            ) : reportOpen ? (
+              <form onSubmit={handleReportSubmit} className="report-form">
+                <textarea
+                  placeholder="¿Por qué quieres reportar este anuncio?"
+                  value={reportMotivo}
+                  onChange={(e) => setReportMotivo(e.target.value)}
+                  maxLength={500}
+                  required
+                />
+                <div className="report-form-actions">
+                  <button
+                    type="submit"
+                    className="btn btn-outline btn-sm"
+                    disabled={reportSubmitting}
+                  >
+                    {reportSubmitting ? "Enviando…" : "Enviar reporte"}
+                  </button>
+                  <button
+                    type="button"
+                    className="link-btn"
+                    onClick={() => setReportOpen(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                {reportMsg && <p className="field-error">{reportMsg}</p>}
+              </form>
+            ) : (
+              <button type="button" className="link-btn report-toggle" onClick={handleReportToggle}>
+                Reportar anuncio
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </article>
     {editing && whatsappEdit && (

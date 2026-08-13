@@ -95,3 +95,11 @@ export const publicarSchema = z
   });
 
 export type PublicarInput = z.infer<typeof publicarSchema>;
+
+export const reportSchema = z.object({
+  motivo: z
+    .string()
+    .trim()
+    .min(3, "Cuéntanos brevemente por qué lo reportas.")
+    .max(500, "Máximo 500 caracteres."),
+});

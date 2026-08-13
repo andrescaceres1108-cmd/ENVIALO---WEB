@@ -9,6 +9,7 @@ import {
   forgotPasswordSchema,
   updatePasswordSchema,
   publicarSchema,
+  reportSchema,
 } from "@/lib/validation";
 
 async function getOrigin() {
@@ -19,6 +20,34 @@ async function getOrigin() {
   const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
   const proto = h.get("x-forwarded-proto") ?? (isLocal ? "http" : "https");
   return `${proto}://${host}`;
+}
+
+async function getClientIp() {
+  const h = await headers();
+  const fwd = h.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0].trim();
+  return h.get("x-real-ip") ?? "unknown";
+}
+
+const RATE_LIMIT_MESSAGE =
+  "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.";
+
+// Envuelve la función SQL check_rate_limit() (ver supabase/schema.sql). Si
+// la migración todavía no se corrió (o hay un error de red), no bloqueamos
+// al usuario: preferimos dejar pasar antes que romper la app por esto.
+async function checkRateLimit(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  key: string,
+  max: number,
+  windowSeconds: number
+) {
+  const { data, error } = await supabase.rpc("check_rate_limit", {
+    p_key: key,
+    p_max: max,
+    p_window_seconds: windowSeconds,
+  });
+  if (error) return true;
+  return data === true;
 }
 
 export type ActionState = {
@@ -50,6 +79,12 @@ export async function signUpAction(
   }
 
   const supabase = await createClient();
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(supabase, `signup:${ip}`, 5, 3600);
+  if (!allowed) {
+    return { ok: false, message: RATE_LIMIT_MESSAGE };
+  }
+
   const { data } = parsed;
 
   const { error } = await supabase.auth.signUp({
@@ -84,6 +119,12 @@ export async function logInAction(
   }
 
   const supabase = await createClient();
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(supabase, `login:${ip}`, 10, 300);
+  if (!allowed) {
+    return { ok: false, message: RATE_LIMIT_MESSAGE };
+  }
+
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
@@ -105,6 +146,12 @@ export async function forgotPasswordAction(
   }
 
   const supabase = await createClient();
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(supabase, `forgot:${ip}`, 3, 3600);
+  if (!allowed) {
+    return { ok: false, message: RATE_LIMIT_MESSAGE };
+  }
+
   const origin = await getOrigin();
 
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
@@ -189,6 +236,14 @@ export async function publicarAnuncioAction(
 
   if (!user) {
     return { ok: false, message: "Debes iniciar sesión para publicar un anuncio." };
+  }
+
+  const allowed = await checkRateLimit(supabase, `publicar:${user.id}`, 5, 86400);
+  if (!allowed) {
+    return {
+      ok: false,
+      message: "Alcanzaste el máximo de anuncios publicados por hoy. Intenta mañana.",
+    };
   }
 
   const raw = {
@@ -327,4 +382,47 @@ export async function obtenerContactoAction(
   }
 
   return { whatsapp: data.whatsapp };
+}
+
+export async function reportarAnuncioAction(
+  anuncioId: string,
+  motivo: string
+): Promise<{ ok: boolean; message?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Debes iniciar sesión para reportar un anuncio." };
+  }
+
+  const parsed = reportSchema.safeParse({ motivo });
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: parsed.error.issues[0]?.message ?? "Cuéntanos brevemente por qué lo reportas.",
+    };
+  }
+
+  const allowed = await checkRateLimit(supabase, `reportar:${user.id}`, 10, 86400);
+  if (!allowed) {
+    return { ok: false, message: RATE_LIMIT_MESSAGE };
+  }
+
+  const { error } = await supabase
+    .from("reportes")
+    .insert({ anuncio_id: anuncioId, reporter_id: user.id, motivo: parsed.data.motivo });
+
+  if (error) {
+    if (error.code === "23505") {
+      return { ok: false, message: "Ya habías reportado este anuncio." };
+    }
+    return { ok: false, message: "No se pudo enviar el reporte. Intenta de nuevo." };
+  }
+
+  return {
+    ok: true,
+    message: "Reporte enviado. Gracias por ayudarnos a mantener SendGO seguro.",
+  };
 }

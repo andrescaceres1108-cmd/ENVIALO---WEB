@@ -338,6 +338,12 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .pill-name { font-family: var(--font-geist-mono), monospace; font-size: .7rem; color: var(--muted); }
 
+.report-block { margin-top: 10px; }
+.report-toggle { font-size: .75rem; color: var(--muted); }
+.report-form { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }
+.report-form textarea { font-size: .85rem; min-height: 60px; }
+.report-form-actions { display: flex; align-items: center; gap: 12px; }
+
 .tag-menu { position: absolute; top: 10px; right: 10px; z-index: 5; }
 .tag-menu-btn {
   width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-soft);

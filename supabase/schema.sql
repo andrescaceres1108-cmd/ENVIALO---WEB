@@ -171,3 +171,78 @@ end;
 $$;
 
 grant execute on function public.delete_own_account() to authenticated;
+
+-- ---------- migración: rate limiting ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Tabla genérica de contadores por ventana de tiempo, usada por
+-- check_rate_limit() para frenar abuso (registro masivo, fuerza bruta de
+-- login, spam de "olvidé mi contraseña", publicar/reportar en cadena).
+-- La tabla no tiene policies (RLS activo, sin "using"), así que nadie
+-- puede leerla/escribirla directo vía la API: solo es accesible desde la
+-- función security definer de abajo, que corre con privilegios elevados.
+create table if not exists public.rate_limits (
+  key text primary key,
+  count int not null default 1,
+  window_start timestamptz not null default now()
+);
+
+alter table public.rate_limits enable row level security;
+
+-- Devuelve true si la acción identificada por `p_key` todavía está dentro
+-- del límite `p_max` para la ventana de `p_window_seconds` segundos; si la
+-- ventana ya expiró, la reinicia. Se llama con una key que combina la
+-- acción + un identificador (ip o user id), ej: 'signup:203.0.113.4'.
+create or replace function public.check_rate_limit(
+  p_key text,
+  p_max int,
+  p_window_seconds int
+)
+returns boolean
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  v_count int;
+begin
+  insert into public.rate_limits (key, count, window_start)
+  values (p_key, 1, now())
+  on conflict (key) do update
+    set count = case
+        when public.rate_limits.window_start < now() - (p_window_seconds || ' seconds')::interval
+          then 1
+        else public.rate_limits.count + 1
+      end,
+      window_start = case
+        when public.rate_limits.window_start < now() - (p_window_seconds || ' seconds')::interval
+          then now()
+        else public.rate_limits.window_start
+      end
+  returning count into v_count;
+
+  return v_count <= p_max;
+end;
+$$;
+
+grant execute on function public.check_rate_limit(text, int, int) to anon, authenticated;
+
+-- ---------- migración: reportar anuncios ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Cola de reportes de usuarios sobre anuncios sospechosos/abusivos. No
+-- tiene policy de SELECT a propósito: ningún usuario (ni siquiera el dueño
+-- del anuncio) puede leer quién reportó qué; solo se revisa manualmente
+-- desde el Table Editor de Supabase (con el rol admin, que ignora RLS).
+create table if not exists public.reportes (
+  id uuid primary key default gen_random_uuid(),
+  anuncio_id uuid not null references public.anuncios (id) on delete cascade,
+  reporter_id uuid not null references public.profiles (id) on delete cascade,
+  motivo text not null check (length(trim(motivo)) between 3 and 500),
+  created_at timestamptz not null default now(),
+  unique (anuncio_id, reporter_id)
+);
+
+alter table public.reportes enable row level security;
+
+create policy "reportes: un usuario autenticado reporta con su propio id"
+  on public.reportes for insert
+  to authenticated
+  with check (auth.uid() = reporter_id);

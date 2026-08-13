@@ -91,9 +91,9 @@ nav a, nav button {
   text-decoration: none; display: inline-block;
 }
 nav a:hover, nav a.active, nav button:hover, nav button.active {
-  background: var(--fg);
-  border-color: var(--fg);
-  color: var(--bg);
+  background: rgba(115, 112, 255, .22);
+  border-color: rgba(115, 112, 255, .4);
+  color: #d6d5ff;
   text-shadow: none;
   box-shadow: none;
 }
@@ -102,8 +102,8 @@ nav a:focus-visible, nav button:focus-visible { outline: 3px solid var(--accent)
 .user-menu { position: relative; }
 .avatar-badge {
   position: relative; width: 38px; height: 38px; border-radius: 50%;
-  background: var(--fg); color: var(--bg);
-  border: none; cursor: pointer;
+  background: rgba(115, 112, 255, .22); color: #d6d5ff;
+  border: 1px solid rgba(115, 112, 255, .4); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   font-family: var(--font-geist-sans), sans-serif; font-weight: 700; font-size: 1rem;
   transition: .15s;
@@ -111,9 +111,9 @@ nav a:focus-visible, nav button:focus-visible { outline: 3px solid var(--accent)
   box-shadow: none;
 }
 nav .avatar-badge:hover {
-  background: var(--white);
-  border-color: transparent;
-  color: var(--bg);
+  background: rgba(115, 112, 255, .32);
+  border-color: rgba(115, 112, 255, .55);
+  color: #d6d5ff;
   box-shadow: none;
 }
 .avatar-badge:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
@@ -252,8 +252,8 @@ textarea { resize: vertical; min-height: 72px; }
   transition: .15s;
 }
 .seg button.on {
-  background: var(--fg);
-  color: var(--bg);
+  background: rgba(115, 112, 255, .22);
+  color: #d6d5ff;
   text-shadow: none;
   box-shadow: none;
 }
@@ -311,9 +311,9 @@ textarea { resize: vertical; min-height: 72px; }
 }
 .tag-actions { margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .btn-wa {
-  background: var(--fg);
-  color: var(--bg);
-  border: none;
+  background: rgba(115, 112, 255, .22);
+  color: #d6d5ff;
+  border: 1px solid rgba(115, 112, 255, .4);
   border-radius: 999px;
   padding: 9px 16px; font-weight: 600; font-size: .82rem; cursor: pointer;
   font-family: var(--font-geist-sans), sans-serif; transition: .15s; text-decoration: none; display: inline-block;
@@ -321,7 +321,8 @@ textarea { resize: vertical; min-height: 72px; }
   box-shadow: none;
 }
 .btn-wa:hover {
-  background: var(--white);
+  background: rgba(115, 112, 255, .32);
+  border-color: rgba(115, 112, 255, .55);
 }
 .pill-name { font-family: var(--font-geist-mono), monospace; font-size: .7rem; color: var(--muted); }
 

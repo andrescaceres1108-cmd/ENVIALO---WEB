@@ -9,6 +9,7 @@ export default function Footer() {
       responsable de cumplir las normas aduaneras de EE.UU. y Colombia.
       <div className="foot-links">
         <a href="/terminos">Términos y condiciones</a>
+        <a href="/privacidad">Política de privacidad</a>
       </div>
     </footer>
   );

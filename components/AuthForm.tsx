@@ -118,6 +118,18 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
           )}
 
+          <p className="field-hint">
+            Al crear tu cuenta aceptas nuestros{" "}
+            <a href="/terminos" target="_blank" rel="noopener noreferrer">
+              Términos y condiciones
+            </a>{" "}
+            y nuestra{" "}
+            <a href="/privacidad" target="_blank" rel="noopener noreferrer">
+              Política de privacidad
+            </a>
+            .
+          </p>
+
           <button type="submit" className="btn btn-primary btn-sm" disabled={signupPending}>
             {signupPending ? "Creando cuenta…" : "Crear cuenta"}
           </button>

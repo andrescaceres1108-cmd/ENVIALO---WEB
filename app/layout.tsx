@@ -16,10 +16,38 @@ const geistMono = Geist_Mono({
   weight: ["400", "500", "600"],
 });
 
+const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://send-go.vercel.app").replace(
+  /\/$/,
+  ""
+);
+const title = "SendGO — Envíos entre USA y Colombia con viajeros";
+const description =
+  "Tablón de anuncios que conecta viajeros con espacio en su maleta con personas que necesitan enviar cosas entre el DMV y Colombia.";
+
 export const metadata: Metadata = {
-  title: "SendGO — Envíos entre USA y Colombia con viajeros",
-  description:
-    "Tablón de anuncios que conecta viajeros con espacio en su maleta con personas que necesitan enviar cosas entre el DMV y Colombia.",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: title,
+    template: "%s · SendGO",
+  },
+  description,
+  openGraph: {
+    title,
+    description,
+    url: siteUrl,
+    siteName: "SendGO",
+    locale: "es_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

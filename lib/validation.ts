@@ -12,6 +12,9 @@ export const signupSchema = z
       .trim()
       .min(7, "Ingresa un teléfono válido con código de país."),
     cedula: z.string().trim().optional(),
+    acepto_terminos: z.literal(true, {
+      message: "Debes aceptar los Términos y la Política de privacidad.",
+    }),
   })
   .superRefine((data, ctx) => {
     if (data.pais === "co" && (!data.cedula || data.cedula.trim().length < 5)) {

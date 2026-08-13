@@ -40,7 +40,10 @@ export async function signUpAction(
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  const raw = Object.fromEntries(formData);
+  const raw = {
+    ...Object.fromEntries(formData),
+    acepto_terminos: formData.get("acepto_terminos") === "on",
+  };
   const parsed = signupSchema.safeParse(raw);
   if (!parsed.success) {
     return { ok: false, errors: firstErrors(parsed.error.flatten().fieldErrors) };

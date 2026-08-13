@@ -118,17 +118,25 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
             </div>
           )}
 
-          <p className="field-hint">
-            Al crear tu cuenta aceptas nuestros{" "}
-            <a href="/terminos" target="_blank" rel="noopener noreferrer">
-              Términos y condiciones
-            </a>{" "}
-            y nuestra{" "}
-            <a href="/privacidad" target="_blank" rel="noopener noreferrer">
-              Política de privacidad
-            </a>
-            .
-          </p>
+          <div className="field">
+            <div className="check">
+              <input type="checkbox" id="acepto_terminos" name="acepto_terminos" required />
+              <span>
+                Acepto los{" "}
+                <a href="/terminos" target="_blank" rel="noopener noreferrer">
+                  Términos y condiciones
+                </a>{" "}
+                y la{" "}
+                <a href="/privacidad" target="_blank" rel="noopener noreferrer">
+                  Política de privacidad
+                </a>
+                .
+              </span>
+            </div>
+            {signupState.errors?.acepto_terminos && (
+              <p className="field-error">{signupState.errors.acepto_terminos}</p>
+            )}
+          </div>
 
           <button type="submit" className="btn btn-primary btn-sm" disabled={signupPending}>
             {signupPending ? "Creando cuenta…" : "Crear cuenta"}

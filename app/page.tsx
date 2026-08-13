@@ -16,7 +16,7 @@ export default function Home() {
           Lo que necesitas, <em>cuando lo necesitas</em>.
         </h1>
         <p className="tagline">
-          Conectamos tus envíos con personas que ya están viajando.
+          Conectamos tus envíos con personas que van a viajar.
         </p>
         <p className="sub">
           SendGO conecta a viajeros con espacio en su maleta con personas que

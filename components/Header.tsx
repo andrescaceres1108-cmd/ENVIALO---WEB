@@ -20,11 +20,6 @@ export default async function Header() {
 
   return (
     <header>
-      <div className="tricolor">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
       <div className="header-in">
         <Link href="/" className="logo">
           <span className="logo-badge">S</span>

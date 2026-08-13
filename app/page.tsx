@@ -12,7 +12,9 @@ export default function Home() {
           <span className="dot"></span>
           <span>DMV</span>
         </div>
-        <h1>Lo que necesitas, cuando lo necesitas.</h1>
+        <h1>
+          Lo que necesitas, <em>cuando lo necesitas</em>.
+        </h1>
         <p className="tagline">
           Conectamos tus envíos con personas que ya están viajando.
         </p>

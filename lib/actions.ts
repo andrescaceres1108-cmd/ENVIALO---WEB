@@ -32,6 +32,13 @@ async function getClientIp() {
 const RATE_LIMIT_MESSAGE =
   "Demasiados intentos. Espera unos minutos y vuelve a intentarlo.";
 
+// Límite de envío de correos de Supabase (distinto de nuestro check_rate_limit
+// propio): se activa cuando se mandan demasiados correos de auth en poco
+// tiempo. El mensaje crudo de Supabase viene en inglés ("email rate limit
+// exceeded"), así que lo traducimos.
+const EMAIL_RATE_LIMIT_MESSAGE =
+  "Se enviaron demasiados correos en poco tiempo. Espera unos minutos y vuelve a intentarlo.";
+
 // Envuelve la función SQL check_rate_limit() (ver supabase/schema.sql). Si
 // la migración todavía no se corrió (o hay un error de red), no bloqueamos
 // al usuario: preferimos dejar pasar antes que romper la app por esto.
@@ -110,6 +117,9 @@ export async function signUpAction(
   });
 
   if (error) {
+    if (error.code === "over_email_send_rate_limit") {
+      return { ok: false, message: EMAIL_RATE_LIMIT_MESSAGE };
+    }
     return { ok: false, message: error.message };
   }
 
@@ -178,13 +188,18 @@ export async function resendConfirmationAction(
 
   const origin = await getOrigin();
 
-  await supabase.auth.resend({
+  const { error } = await supabase.auth.resend({
     type: "signup",
     email: parsed.data,
     options: { emailRedirectTo: `${origin}/auth/confirm` },
   });
 
-  // Mensaje genérico: no revelamos si el correo está registrado o ya confirmado.
+  if (error?.code === "over_email_send_rate_limit") {
+    return { ok: false, message: EMAIL_RATE_LIMIT_MESSAGE };
+  }
+
+  // Mensaje genérico para el resto de los casos: no revelamos si el correo
+  // está registrado o ya confirmado.
   return {
     ok: true,
     message: "Si el correo existe y no está confirmado, te reenviamos el enlace de activación.",

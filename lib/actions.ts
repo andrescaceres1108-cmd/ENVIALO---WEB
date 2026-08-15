@@ -54,6 +54,13 @@ export type ActionState = {
   ok: boolean;
   message?: string;
   errors?: Record<string, string>;
+  // true si el signup quedó pendiente de confirmar por correo (no hay
+  // sesión activa todavía). Se usa para no cerrar el modal de auth como
+  // si ya hubiera quedado logueado.
+  requiresConfirmation?: boolean;
+  // true si el login falló específicamente porque el correo no está
+  // confirmado (para ofrecer el botón de "reenviar correo").
+  unconfirmed?: boolean;
 };
 
 function firstErrors(flat: Record<string, string[] | undefined>) {
@@ -86,11 +93,13 @@ export async function signUpAction(
   }
 
   const { data } = parsed;
+  const origin = await getOrigin();
 
-  const { error } = await supabase.auth.signUp({
+  const { data: authData, error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
+      emailRedirectTo: `${origin}/auth/confirm`,
       data: {
         nombre: data.nombre,
         pais: data.pais,
@@ -102,6 +111,15 @@ export async function signUpAction(
 
   if (error) {
     return { ok: false, message: error.message };
+  }
+
+  if (!authData.session) {
+    return {
+      ok: true,
+      requiresConfirmation: true,
+      message:
+        "Cuenta creada. Revisa tu correo (y la carpeta de spam) y haz clic en el enlace para activar tu cuenta.",
+    };
   }
 
   revalidatePath("/", "layout");
@@ -128,11 +146,49 @@ export async function logInAction(
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
+    if (error.code === "email_not_confirmed") {
+      return {
+        ok: false,
+        unconfirmed: true,
+        message:
+          "Tu correo aún no está confirmado. Revisa tu bandeja de entrada (y spam) para activar tu cuenta.",
+      };
+    }
     return { ok: false, message: "Correo o contraseña incorrectos." };
   }
 
   revalidatePath("/", "layout");
   return { ok: true, message: "Sesión iniciada." };
+}
+
+export async function resendConfirmationAction(
+  email: string
+): Promise<{ ok: boolean; message?: string }> {
+  const parsed = loginSchema.shape.email.safeParse(email);
+  if (!parsed.success) {
+    return { ok: false, message: "Ingresa un correo válido." };
+  }
+
+  const supabase = await createClient();
+  const ip = await getClientIp();
+  const allowed = await checkRateLimit(supabase, `resend:${ip}`, 3, 3600);
+  if (!allowed) {
+    return { ok: false, message: RATE_LIMIT_MESSAGE };
+  }
+
+  const origin = await getOrigin();
+
+  await supabase.auth.resend({
+    type: "signup",
+    email: parsed.data,
+    options: { emailRedirectTo: `${origin}/auth/confirm` },
+  });
+
+  // Mensaje genérico: no revelamos si el correo está registrado o ya confirmado.
+  return {
+    ok: true,
+    message: "Si el correo existe y no está confirmado, te reenviamos el enlace de activación.",
+  };
 }
 
 export async function forgotPasswordAction(

@@ -5,6 +5,7 @@ import {
   signUpAction,
   logInAction,
   forgotPasswordAction,
+  resendConfirmationAction,
   type ActionState,
 } from "@/lib/actions";
 import SegmentedControl from "@/components/SegmentedControl";
@@ -15,6 +16,9 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   const [tab, setTab] = useState<"signup" | "login">("signup");
   const [pais, setPais] = useState<"usa" | "co">("usa");
   const [forgotOpen, setForgotOpen] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [resendMsg, setResendMsg] = useState<string | null>(null);
+  const [resendPending, setResendPending] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
     signUpAction,
     initialState
@@ -29,12 +33,21 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   );
 
   useEffect(() => {
-    if (signupState.ok) onSuccess?.();
-  }, [signupState.ok, onSuccess]);
+    if (signupState.ok && !signupState.requiresConfirmation) onSuccess?.();
+  }, [signupState.ok, signupState.requiresConfirmation, onSuccess]);
 
   useEffect(() => {
     if (loginState.ok) onSuccess?.();
   }, [loginState.ok, onSuccess]);
+
+  async function handleResend() {
+    if (!loginEmail) return;
+    setResendPending(true);
+    setResendMsg(null);
+    const res = await resendConfirmationAction(loginEmail);
+    setResendPending(false);
+    setResendMsg(res.message ?? null);
+  }
 
   return (
     <div>
@@ -176,7 +189,14 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
         <form action={loginFormAction} noValidate>
           <div className="field">
             <label htmlFor="login-email">Correo</label>
-            <input id="login-email" name="email" type="email" required />
+            <input
+              id="login-email"
+              name="email"
+              type="email"
+              required
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+            />
             {loginState.errors?.email && <p className="field-error">{loginState.errors.email}</p>}
           </div>
           <div className="field">
@@ -194,6 +214,19 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
           </button>
           {loginState.message && (
             <p className={`form-msg ${loginState.ok ? "ok" : "err"}`}>{loginState.message}</p>
+          )}
+          {loginState.unconfirmed && (
+            <div style={{ marginTop: 8 }}>
+              <button
+                type="button"
+                className="link-btn"
+                onClick={handleResend}
+                disabled={resendPending || !loginEmail}
+              >
+                {resendPending ? "Reenviando…" : "Reenviar correo de confirmación"}
+              </button>
+              {resendMsg && <p className="form-msg ok">{resendMsg}</p>}
+            </div>
           )}
         </form>
       )}

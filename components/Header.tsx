@@ -9,13 +9,15 @@ export default async function Header() {
   } = await supabase.auth.getUser();
 
   let nombre: string | null = null;
+  let isAdmin = false;
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("nombre")
+      .select("nombre, is_admin")
       .eq("id", user.id)
       .single();
     nombre = profile?.nombre ?? null;
+    isAdmin = profile?.is_admin === true;
   }
 
   return (
@@ -31,6 +33,7 @@ export default async function Header() {
         <nav>
           <Link href="/publicar">Publicar anuncio</Link>
           <Link href="/anuncios">Ver anuncios</Link>
+          {isAdmin && <Link href="/admin">Admin</Link>}
           {user ? (
             <UserMenu nombre={nombre ?? user.email ?? "U"} email={user.email ?? ""} />
           ) : (

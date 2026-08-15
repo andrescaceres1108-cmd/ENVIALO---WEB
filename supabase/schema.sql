@@ -246,3 +246,53 @@ create policy "reportes: un usuario autenticado reporta con su propio id"
   on public.reportes for insert
   to authenticated
   with check (auth.uid() = reporter_id);
+
+-- ---------- migración: usuario maestro (admin) ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Agrega una bandera is_admin a profiles y una función security definer
+-- para leerla sin recursión de RLS (mismo patrón que check_rate_limit /
+-- delete_own_account: la función corre con privilegios elevados, así que
+-- puede leer profiles.is_admin sin volver a pasar por las policies de
+-- profiles, evitando el loop infinito de "una policy de profiles que
+-- consulta profiles").
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer set search_path = public
+as $$
+  select coalesce((select is_admin from public.profiles where id = auth.uid()), false);
+$$;
+
+grant execute on function public.is_admin() to authenticated;
+
+-- Da acceso de admin al único usuario maestro autorizado por ahora.
+-- Si más adelante agregas otro admin, corre este mismo update cambiando
+-- el correo.
+update public.profiles
+set is_admin = true
+where id = (select id from auth.users where email = 'andrescaceres1108@gmail.com');
+
+-- El admin puede ver todos los perfiles (para mostrar nombres de dueños
+-- y de quien reporta en el panel /admin).
+create policy "profiles: admin lee todos los perfiles"
+  on public.profiles for select
+  using (public.is_admin());
+
+-- El admin puede borrar cualquier anuncio (moderación), no solo el suyo.
+create policy "anuncios: admin borra cualquier anuncio"
+  on public.anuncios for delete
+  to authenticated
+  using (public.is_admin());
+
+-- El admin puede leer y descartar reportes (antes nadie podía leerlos
+-- desde la API; ahora solo el admin puede).
+create policy "reportes: admin lee todos los reportes"
+  on public.reportes for select
+  using (public.is_admin());
+
+create policy "reportes: admin descarta reportes"
+  on public.reportes for delete
+  using (public.is_admin());

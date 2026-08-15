@@ -36,7 +36,7 @@ body {
   transform: translateX(-50%);
   background: radial-gradient(closest-side, var(--accent), transparent 72%);
   opacity: .16;
-  filter: blur(90px);
+  filter: blur(108px);
   pointer-events: none;
 }
 a { color: inherit; }

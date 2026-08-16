@@ -35,7 +35,7 @@ body {
   width: 1300px; height: 730px;
   transform: translateX(-50%);
   background: radial-gradient(closest-side, var(--accent), transparent 72%);
-  opacity: .16;
+  opacity: .192;
   filter: blur(156px);
   pointer-events: none;
 }
@@ -44,7 +44,9 @@ a { color: inherit; }
 
 /* ---------- Header ---------- */
 header {
-  background: var(--bg);
+  background: rgba(10, 10, 10, .55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   color: var(--fg);
   padding: 0;
   position: sticky; top: 0; z-index: 50;

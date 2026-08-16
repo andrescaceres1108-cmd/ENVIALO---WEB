@@ -1,11 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import AuthForm from "@/components/AuthForm";
 
 export default function AccountView() {
-  const router = useRouter();
-
   return (
     <>
       <div className="section-head">
@@ -16,7 +13,7 @@ export default function AccountView() {
         </p>
       </div>
       <div className="card-form">
-        <AuthForm onSuccess={() => router.push("/")} />
+        <AuthForm redirectTo="/" />
       </div>
     </>
   );

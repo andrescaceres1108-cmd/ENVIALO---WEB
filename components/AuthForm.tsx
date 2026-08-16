@@ -12,7 +12,17 @@ import SegmentedControl from "@/components/SegmentedControl";
 
 const initialState: ActionState = { ok: false };
 
-export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function AuthForm({
+  onSuccess,
+  redirectTo,
+}: {
+  onSuccess?: () => void;
+  // Si se pasa, el login/signup exitoso navega server-side a esta ruta
+  // (evita la carrera entre el revalidatePath del layout y un router.push
+  // hecho desde un useEffect en el cliente). Si se omite, no navega solo
+  // — útil para flujos tipo modal que deben quedarse en la misma página.
+  redirectTo?: string | null;
+}) {
   const [tab, setTab] = useState<"signup" | "login">("signup");
   const [pais, setPais] = useState<"usa" | "co">("usa");
   const [forgotOpen, setForgotOpen] = useState(false);
@@ -20,11 +30,11 @@ export default function AuthForm({ onSuccess }: { onSuccess?: () => void }) {
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendPending, setResendPending] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
-    signUpAction,
+    signUpAction.bind(null, redirectTo ?? null),
     initialState
   );
   const [loginState, loginFormAction, loginPending] = useActionState(
-    logInAction,
+    logInAction.bind(null, redirectTo ?? null),
     initialState
   );
   const [forgotState, forgotFormAction, forgotPending] = useActionState(

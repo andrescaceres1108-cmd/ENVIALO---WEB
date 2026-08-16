@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -80,6 +81,7 @@ function firstErrors(flat: Record<string, string[] | undefined>) {
 }
 
 export async function signUpAction(
+  redirectTo: string | null,
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -133,10 +135,14 @@ export async function signUpAction(
   }
 
   revalidatePath("/", "layout");
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
   return { ok: true, message: "Cuenta creada. Ya puedes publicar y ver contactos." };
 }
 
 export async function logInAction(
+  redirectTo: string | null,
   _prev: ActionState,
   formData: FormData
 ): Promise<ActionState> {
@@ -168,6 +174,9 @@ export async function logInAction(
   }
 
   revalidatePath("/", "layout");
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
   return { ok: true, message: "Sesión iniciada." };
 }
 

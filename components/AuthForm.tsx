@@ -82,7 +82,7 @@ export default function AuthForm({
         <form action={signupFormAction} noValidate>
           <div className="field">
             <label htmlFor="nombre">Nombre completo</label>
-            <input id="nombre" name="nombre" placeholder="Ej: Andrés G." required />
+            <input id="nombre" name="nombre" required />
             {signupState.errors?.nombre && (
               <p className="field-error">{signupState.errors.nombre}</p>
             )}
@@ -204,6 +204,7 @@ export default function AuthForm({
               name="email"
               type="email"
               required
+              autoComplete="off"
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
             />
@@ -211,7 +212,13 @@ export default function AuthForm({
           </div>
           <div className="field">
             <label htmlFor="login-password">Contraseña</label>
-            <input id="login-password" name="password" type="password" required />
+            <input
+              id="login-password"
+              name="password"
+              type="password"
+              required
+              autoComplete="off"
+            />
             {loginState.errors?.password && (
               <p className="field-error">{loginState.errors.password}</p>
             )}

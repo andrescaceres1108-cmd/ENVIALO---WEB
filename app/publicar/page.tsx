@@ -9,7 +9,7 @@ export default async function PublicarPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/cuenta?next=/publicar");
+    redirect("/cuenta");
   }
 
   return (

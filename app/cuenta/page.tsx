@@ -5,9 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 export default async function CuentaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -30,7 +30,7 @@ export default async function CuentaPage({
           desde &quot;Iniciar sesión&quot;.
         </p>
       )}
-      <AccountView next={next} />
+      <AccountView />
     </>
   );
 }

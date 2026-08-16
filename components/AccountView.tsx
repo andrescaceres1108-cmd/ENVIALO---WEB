@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import AuthForm from "@/components/AuthForm";
 
-export default function AccountView({ next }: { next?: string }) {
+export default function AccountView() {
   const router = useRouter();
 
   return (
@@ -16,7 +16,7 @@ export default function AccountView({ next }: { next?: string }) {
         </p>
       </div>
       <div className="card-form">
-        <AuthForm onSuccess={() => router.push(next || "/anuncios")} />
+        <AuthForm onSuccess={() => router.push("/")} />
       </div>
     </>
   );

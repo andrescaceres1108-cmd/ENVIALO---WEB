@@ -8,7 +8,7 @@ export default async function PerfilPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/cuenta?next=/perfil");
+    redirect("/cuenta");
   }
 
   const { data: profile } = await supabase

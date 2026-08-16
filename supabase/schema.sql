@@ -296,3 +296,54 @@ create policy "reportes: admin lee todos los reportes"
 create policy "reportes: admin descarta reportes"
   on public.reportes for delete
   using (public.is_admin());
+
+-- ---------- migración: redes sociales y foto de perfil obligatorias ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Se piden Facebook/Instagram y una foto de perfil al crear la cuenta,
+-- para darle más confianza a quien contacta a un anunciante. La foto se
+-- sube a Storage (ver bucket "avatars" más abajo) y se guarda su URL
+-- pública tanto en el perfil como (copiada) en cada anuncio que publique
+-- esa persona — mismo patrón que `nombre_contacto`, que ya se duplica en
+-- `anuncios` en vez de hacer join con `profiles` (que no es de lectura
+-- pública).
+alter table public.profiles add column if not exists facebook text;
+alter table public.profiles add column if not exists instagram text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.anuncios add column if not exists avatar_url text;
+
+-- Reemplaza la función anterior para que también guarde facebook/instagram
+-- (llegan como metadata en supabase.auth.signUp). La foto no puede viajar
+-- en la metadata (es un archivo binario), así que se sube y se guarda por
+-- separado desde el server action, con el cliente admin.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.profiles (id, nombre, pais, telefono, cedula, facebook, instagram)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'nombre', ''),
+    coalesce(new.raw_user_meta_data ->> 'pais', 'usa'),
+    coalesce(new.raw_user_meta_data ->> 'telefono', ''),
+    new.raw_user_meta_data ->> 'cedula',
+    new.raw_user_meta_data ->> 'facebook',
+    new.raw_user_meta_data ->> 'instagram'
+  );
+  return new;
+end;
+$$;
+
+-- Bucket público de storage para las fotos de perfil. Es público porque
+-- las fotos se muestran en anuncios visibles para cualquier visitante
+-- (igual que el resto de datos de `anuncios`). Las subidas/actualizaciones
+-- las hace siempre el server action con el cliente admin (service role),
+-- que ignora RLS — por eso no hace falta agregar policies de insert/update
+-- sobre storage.objects para este flujo.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 4194304, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update
+  set public = excluded.public,
+      file_size_limit = excluded.file_size_limit,
+      allowed_mime_types = excluded.allowed_mime_types;

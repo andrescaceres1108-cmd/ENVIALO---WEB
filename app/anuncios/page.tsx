@@ -11,7 +11,7 @@ export default async function AnunciosPage() {
       supabase
         .from("anuncios")
         .select(
-          "id, user_id, direccion, ciudad_origen, ciudad_destino, entrega_domicilio, fecha_viaje, kilos_disponibles, precio_kilo_usd, nombre_contacto, notas"
+          "id, user_id, direccion, ciudad_origen, ciudad_destino, entrega_domicilio, fecha_viaje, kilos_disponibles, precio_kilo_usd, nombre_contacto, notas, avatar_url"
         )
         .gte("fecha_viaje", new Date().toISOString().slice(0, 10))
         .order("fecha_viaje", { ascending: true }),

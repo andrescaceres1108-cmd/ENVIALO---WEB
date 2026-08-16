@@ -21,6 +21,7 @@ export type AnuncioPublico = {
   precio_kilo_usd: number;
   nombre_contacto: string;
   notas: string | null;
+  avatar_url: string | null;
 };
 
 function fmtFecha(f: string) {
@@ -242,7 +243,12 @@ export default function TagCard({
               {loading ? "Cargando…" : "Contactar por WhatsApp"}
             </button>
           )}
-          <span className="pill-name">{anuncio.nombre_contacto}</span>
+          <span className="pill-name">
+            {anuncio.avatar_url && (
+              <img src={anuncio.avatar_url} alt="" className="tag-avatar" />
+            )}
+            {anuncio.nombre_contacto}
+          </span>
         </div>
         {error && <p className="field-error">{error}</p>}
 

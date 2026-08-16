@@ -28,6 +28,7 @@ export default function AuthForm({
   const [forgotOpen, setForgotOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendPending, setResendPending] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
@@ -58,6 +59,14 @@ export default function AuthForm({
     const res = await resendConfirmationAction(loginEmail);
     setResendPending(false);
     setResendMsg(res.message ?? null);
+  }
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
   }
 
   return (
@@ -141,6 +150,49 @@ export default function AuthForm({
               </p>
             </div>
           )}
+
+          <div className="grid-2">
+            <div className="field">
+              <label htmlFor="facebook">Facebook</label>
+              <input id="facebook" name="facebook" placeholder="Nombre de perfil o link" required />
+              {signupState.errors?.facebook && (
+                <p className="field-error">{signupState.errors.facebook}</p>
+              )}
+            </div>
+            <div className="field">
+              <label htmlFor="instagram">Instagram</label>
+              <input id="instagram" name="instagram" placeholder="@usuario" required />
+              {signupState.errors?.instagram && (
+                <p className="field-error">{signupState.errors.instagram}</p>
+              )}
+            </div>
+          </div>
+          <p className="field-hint">
+            Pedimos tus redes sociales para darle más confianza a quien te contacte.
+          </p>
+
+          <div className="field">
+            <label htmlFor="avatar">Foto de perfil</label>
+            <div className="avatar-field">
+              <div className={`avatar-preview${avatarPreview ? "" : " avatar-preview-empty"}`}>
+                {avatarPreview && <img src={avatarPreview} alt="" />}
+              </div>
+              <input
+                id="avatar"
+                name="avatar"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                required
+                onChange={handleAvatarChange}
+              />
+            </div>
+            {signupState.errors?.avatar && (
+              <p className="field-error">{signupState.errors.avatar}</p>
+            )}
+            <p className="field-hint">
+              La foto es obligatoria y se mostrará en tus anuncios para darle más confianza a quien te contacte.
+            </p>
+          </div>
 
           <div className="field">
             <div className="check">

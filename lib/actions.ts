@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
+import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   signupSchema,
   loginSchema,
@@ -80,6 +82,39 @@ function firstErrors(flat: Record<string, string[] | undefined>) {
   return errors;
 }
 
+const AVATAR_BUCKET = "avatars";
+const AVATAR_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+// Sube la foto a una ruta temporal ANTES de crear la cuenta: si el storage
+// falla (bucket sin migrar, service role mal configurada, etc.) preferimos
+// avisar aquí y no dejar creada una cuenta sin la foto obligatoria.
+async function uploadAvatarTemp(
+  file: File
+): Promise<{ ok: true; path: string } | { ok: false; message: string }> {
+  const ext = AVATAR_EXT[file.type];
+  if (!ext) {
+    return { ok: false, message: "Formato no soportado: usa JPG, PNG o WEBP." };
+  }
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return { ok: false, message: "No se pudo subir la foto de perfil. Intenta de nuevo." };
+  }
+  const path = `pending/${randomUUID()}.${ext}`;
+  const { error } = await admin.storage
+    .from(AVATAR_BUCKET)
+    .upload(path, file, { contentType: file.type, upsert: false });
+  if (error) {
+    return { ok: false, message: "No se pudo subir la foto de perfil. Intenta de nuevo." };
+  }
+  return { ok: true, path };
+}
+
 export async function signUpAction(
   redirectTo: string | null,
   _prev: ActionState,
@@ -102,6 +137,12 @@ export async function signUpAction(
   }
 
   const { data } = parsed;
+
+  const uploaded = await uploadAvatarTemp(data.avatar);
+  if (!uploaded.ok) {
+    return { ok: false, errors: { avatar: uploaded.message } };
+  }
+
   const origin = await getOrigin();
 
   const { data: authData, error } = await supabase.auth.signUp({
@@ -114,15 +155,46 @@ export async function signUpAction(
         pais: data.pais,
         telefono: data.telefono,
         cedula: data.pais === "co" ? data.cedula : null,
+        facebook: data.facebook,
+        instagram: data.instagram,
       },
     },
   });
 
   if (error) {
+    try {
+      await createAdminClient().storage.from(AVATAR_BUCKET).remove([uploaded.path]);
+    } catch {
+      // best-effort: no bloqueamos el mensaje de error por esto
+    }
     if (error.code === "over_email_send_rate_limit") {
       return { ok: false, message: EMAIL_RATE_LIMIT_MESSAGE };
     }
     return { ok: false, message: error.message };
+  }
+
+  // Movemos la foto a su ruta definitiva (carpeta = user id) y la
+  // guardamos en el perfil. Seguimos usando el cliente admin: si la
+  // confirmación de email está activada, todavía no hay sesión para el
+  // cliente normal en este punto.
+  if (authData.user) {
+    const ext = uploaded.path.split(".").pop();
+    const finalPath = `${authData.user.id}/avatar.${ext}`;
+    try {
+      const admin = createAdminClient();
+      const { error: moveError } = await admin.storage
+        .from(AVATAR_BUCKET)
+        .move(uploaded.path, finalPath);
+      if (!moveError) {
+        const {
+          data: { publicUrl },
+        } = admin.storage.from(AVATAR_BUCKET).getPublicUrl(finalPath);
+        await admin.from("profiles").update({ avatar_url: publicUrl }).eq("id", authData.user.id);
+      }
+    } catch {
+      // best-effort: la cuenta ya se creó; si esto falla, el usuario queda
+      // sin avatar_url pero puede seguir usando la cuenta con normalidad.
+    }
   }
 
   if (!authData.session) {
@@ -339,9 +411,15 @@ export async function publicarAnuncioAction(
 
   const { whatsapp, ...anuncio } = parsed.data;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .single();
+
   const { data: inserted, error } = await supabase
     .from("anuncios")
-    .insert({ ...anuncio, user_id: user.id })
+    .insert({ ...anuncio, user_id: user.id, avatar_url: profile?.avatar_url ?? null })
     .select("id")
     .single();
 
@@ -388,9 +466,15 @@ export async function editarAnuncioAction(
 
   const { whatsapp, ...anuncio } = parsed.data;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("avatar_url")
+    .eq("id", user.id)
+    .single();
+
   const { data: updated, error } = await supabase
     .from("anuncios")
-    .update(anuncio)
+    .update({ ...anuncio, avatar_url: profile?.avatar_url ?? null })
     .eq("id", anuncioId)
     .eq("user_id", user.id)
     .select("id")

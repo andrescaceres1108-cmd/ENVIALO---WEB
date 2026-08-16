@@ -12,6 +12,9 @@ const baseSignup = {
   email: "andres@example.com",
   password: "password123",
   telefono: "+1 703 555 0123",
+  facebook: "andres.gomez",
+  instagram: "@andresg",
+  avatar: new File(["contenido"], "avatar.jpg", { type: "image/jpeg" }),
   acepto_terminos: true as const,
 };
 
@@ -41,6 +44,29 @@ describe("signupSchema", () => {
 
   it("rechaza contraseñas de menos de 8 caracteres", () => {
     const res = signupSchema.safeParse({ ...baseSignup, pais: "usa", password: "abc123" });
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza si falta la foto de perfil", () => {
+    const res = signupSchema.safeParse({
+      ...baseSignup,
+      pais: "usa",
+      avatar: new File([], "vacio.jpg", { type: "image/jpeg" }),
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza formatos de foto no soportados", () => {
+    const res = signupSchema.safeParse({
+      ...baseSignup,
+      pais: "usa",
+      avatar: new File(["contenido"], "avatar.gif", { type: "image/gif" }),
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("rechaza si falta Facebook o Instagram", () => {
+    const res = signupSchema.safeParse({ ...baseSignup, pais: "usa", facebook: "" });
     expect(res.success).toBe(false);
   });
 });

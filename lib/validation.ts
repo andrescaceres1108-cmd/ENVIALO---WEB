@@ -12,6 +12,16 @@ export const signupSchema = z
       .trim()
       .min(7, "Ingresa un teléfono válido con código de país."),
     cedula: z.string().trim().optional(),
+    facebook: z.string().trim().min(2, "Ingresa tu perfil o usuario de Facebook."),
+    instagram: z.string().trim().min(2, "Ingresa tu usuario de Instagram."),
+    avatar: z
+      .instanceof(File, { message: "La foto de perfil es obligatoria." })
+      .refine((f) => f.size > 0, "La foto de perfil es obligatoria.")
+      .refine((f) => f.size <= 4 * 1024 * 1024, "La foto no puede pesar más de 4MB.")
+      .refine(
+        (f) => ["image/jpeg", "image/png", "image/webp"].includes(f.type),
+        "Formato no soportado: usa JPG, PNG o WEBP."
+      ),
     acepto_terminos: z.literal(true, {
       message: "Debes aceptar los Términos y la Política de privacidad.",
     }),

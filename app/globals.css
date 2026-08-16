@@ -31,12 +31,12 @@ body {
   content: "";
   position: absolute;
   z-index: -1;
-  top: -220px; left: 50%;
+  top: -365px; left: 50%;
   width: 1300px; height: 730px;
   transform: translateX(-50%);
   background: radial-gradient(closest-side, var(--accent), transparent 72%);
   opacity: .16;
-  filter: blur(130px);
+  filter: blur(156px);
   pointer-events: none;
 }
 a { color: inherit; }

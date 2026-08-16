@@ -48,7 +48,6 @@ header {
   color: var(--fg);
   padding: 0;
   position: sticky; top: 0; z-index: 50;
-  border-bottom: 1px solid var(--border-soft);
 }
 .tricolor { height: 4px; display: flex; }
 .tricolor span:nth-child(1) { flex: 2; background: var(--co-yellow); }

@@ -27,6 +27,7 @@ export default function AuthForm({
   const [pais, setPais] = useState<"usa" | "co">("usa");
   const [forgotOpen, setForgotOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendPending, setResendPending] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
@@ -217,7 +218,9 @@ export default function AuthForm({
               name="password"
               type="password"
               required
-              autoComplete="off"
+              autoComplete="new-password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
             />
             {loginState.errors?.password && (
               <p className="field-error">{loginState.errors.password}</p>

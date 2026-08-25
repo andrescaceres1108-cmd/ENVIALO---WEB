@@ -40,7 +40,10 @@ export default async function AdminPage() {
     <>
       <div className="section-head">
         <h2>Panel de administración</h2>
-        <p>Reportes de anuncios enviados por usuarios.</p>
+        <p>
+          Reportes de anuncios enviados por usuarios.{" "}
+          <Link href="/admin/metricas">Ver métricas del embudo →</Link>
+        </p>
       </div>
       <AdminReportsList reportesIniciales={res.reportes ?? []} />
     </>

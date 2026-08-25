@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   obtenerContactoAction,
@@ -38,11 +39,14 @@ export default function TagCard({
   isAuthenticated,
   isOwner = false,
   onRequireAuth,
+  enlazarDetalle = true,
 }: {
   anuncio: AnuncioPublico;
   isAuthenticated: boolean;
   isOwner?: boolean;
   onRequireAuth: () => void;
+  // false en la página de detalle, donde enlazar a sí misma no aporta
+  enlazarDetalle?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -203,9 +207,15 @@ export default function TagCard({
           </div>
           <div className="hole"></div>
         </div>
-        <div className="cities">
-          {anuncio.ciudad_origen} → {anuncio.ciudad_destino}
-        </div>
+        {enlazarDetalle ? (
+          <Link href={`/anuncios/${anuncio.id}`} className="cities cities-link">
+            {anuncio.ciudad_origen} → {anuncio.ciudad_destino}
+          </Link>
+        ) : (
+          <div className="cities">
+            {anuncio.ciudad_origen} → {anuncio.ciudad_destino}
+          </div>
+        )}
         <div className="tag-data">
           <div className="datum">
             <div className="lbl">Fecha</div>

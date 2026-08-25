@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { randomUUID } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { registrarEvento } from "@/lib/events";
 import {
   signupSchema,
   loginSchema,
@@ -435,6 +436,14 @@ export async function publicarAnuncioAction(
     return { ok: false, message: contactoError.message };
   }
 
+  await registrarEvento({
+    tipo: "anuncio_publicado",
+    anuncioId: inserted.id,
+    ciudadOrigen: anuncio.ciudad_origen,
+    ciudadDestino: anuncio.ciudad_destino,
+    userId: user.id,
+  });
+
   revalidatePath("/anuncios");
   return { ok: true, message: "Anuncio publicado." };
 }
@@ -543,6 +552,25 @@ export async function obtenerContactoAction(
 
   if (error || !data) {
     return { whatsapp: null, error: "No se pudo obtener el contacto." };
+  }
+
+  // Evento del embudo, registrado antes de revelar el número. El dueño
+  // también pasa por esta acción al abrir el modal de edición de su
+  // propio anuncio; esos casos no cuentan como contacto.
+  const { data: anuncio } = await supabase
+    .from("anuncios")
+    .select("user_id, ciudad_origen, ciudad_destino")
+    .eq("id", anuncioId)
+    .single();
+
+  if (anuncio && anuncio.user_id !== user.id) {
+    await registrarEvento({
+      tipo: "contacto_desbloqueado",
+      anuncioId,
+      ciudadOrigen: anuncio.ciudad_origen,
+      ciudadDestino: anuncio.ciudad_destino,
+      userId: user.id,
+    });
   }
 
   return { whatsapp: data.whatsapp };

@@ -347,3 +347,33 @@ on conflict (id) do update
   set public = excluded.public,
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
+
+-- ---------- migración: eventos de métricas (embudo) ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+-- Registra los pasos del embudo: publicar → ver detalle → desbloquear
+-- contacto → responder encuesta. La ruta se guarda desnormalizada (y el
+-- anuncio_id queda en null si el anuncio se borra) para que las métricas
+-- históricas sobrevivan al borrado de anuncios.
+create table if not exists public.events (
+  id uuid primary key default gen_random_uuid(),
+  tipo text not null check (
+    tipo in ('anuncio_publicado', 'anuncio_visto', 'contacto_desbloqueado', 'respuesta_encuesta')
+  ),
+  fecha timestamptz not null default now(),
+  anuncio_id uuid references public.anuncios (id) on delete set null,
+  ciudad_origen text not null,
+  ciudad_destino text not null,
+  -- solo para respuesta_encuesta; null en los demás tipos
+  valor text check (valor in ('si', 'no')),
+  -- quién generó el evento (null para visitantes anónimos); permite
+  -- deduplicar y, a futuro, mostrar la encuesta solo a quien contactó
+  user_id uuid references auth.users (id) on delete set null
+);
+
+-- RLS activado SIN policies a propósito: los eventos solo se escriben y
+-- leen desde el servidor con el cliente admin (service role), nunca
+-- desde el navegador.
+alter table public.events enable row level security;
+
+create index if not exists events_tipo_fecha_idx on public.events (tipo, fecha);
+create index if not exists events_anuncio_idx on public.events (anuncio_id);

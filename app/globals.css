@@ -322,6 +322,22 @@ textarea { resize: vertical; min-height: 72px; }
 .route .arrow { color: var(--accent); }
 .hole { width: 14px; height: 14px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); flex-shrink: 0; }
 .cities { font-size: .82rem; color: var(--muted); margin-bottom: 12px; }
+.cities-link { display: block; text-decoration: none; }
+.cities-link:hover { color: var(--fg); text-decoration: underline; }
+
+/* ---------- métricas (admin) ---------- */
+.metrics-wrap { overflow-x: auto; }
+.metrics-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.metrics-table th {
+  font-family: var(--font-geist-mono), monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.metrics-table td {
+  padding: 10px 12px; border-bottom: 1px dashed var(--border);
+  color: var(--fg); white-space: nowrap;
+}
 .tag-data { display: flex; gap: 14px; border-top: 1px dashed var(--border); padding-top: 12px; flex-wrap: wrap; }
 .datum .lbl { font-family: var(--font-geist-mono), monospace; font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .datum .val { font-weight: 700; color: var(--fg); font-size: 1rem; }

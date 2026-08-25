@@ -27,10 +27,15 @@ export default async function AdminMetricasPage() {
   const res = await listMetricasAction();
 
   if (!res.ok) {
-    return (
+    return res.noAutorizado ? (
       <div className="empty" style={{ marginTop: 40 }}>
         <div className="big">No autorizado</div>
         <p>Tu cuenta no tiene permisos de administrador.</p>
+      </div>
+    ) : (
+      <div className="empty" style={{ marginTop: 40 }}>
+        <div className="big">No se pudieron cargar las métricas</div>
+        <p>{res.message}</p>
       </div>
     );
   }

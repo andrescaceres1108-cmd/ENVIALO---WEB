@@ -157,12 +157,13 @@ function inicioSemana(fecha: string): string {
 
 export async function listMetricasAction(): Promise<{
   ok: boolean;
+  noAutorizado?: boolean;
   message?: string;
   semanas?: MetricaSemana[];
 }> {
   const { isAdmin } = await requireAdmin();
   if (!isAdmin) {
-    return { ok: false, message: "No autorizado." };
+    return { ok: false, noAutorizado: true, message: "No autorizado." };
   }
 
   // La tabla events no tiene policies de RLS: se lee con el cliente admin.
@@ -177,7 +178,11 @@ export async function listMetricasAction(): Promise<{
     .returns<EventoRow[]>();
 
   if (error || !data) {
-    return { ok: false, message: "No se pudieron cargar las métricas." };
+    return {
+      ok: false,
+      message:
+        "No se pudieron cargar las métricas. Si aún no corriste la migración de la tabla `events` en Supabase, ese es el motivo.",
+    };
   }
 
   // Contactos por anuncio (para las métricas de cohorte).

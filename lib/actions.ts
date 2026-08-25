@@ -102,7 +102,8 @@ async function uploadAvatarTemp(
   let admin;
   try {
     admin = createAdminClient();
-  } catch {
+  } catch (e) {
+    console.error("[uploadAvatarTemp] createAdminClient falló:", e);
     return { ok: false, message: "No se pudo subir la foto de perfil. Intenta de nuevo." };
   }
   const path = `pending/${randomUUID()}.${ext}`;
@@ -110,6 +111,7 @@ async function uploadAvatarTemp(
     .from(AVATAR_BUCKET)
     .upload(path, file, { contentType: file.type, upsert: false });
   if (error) {
+    console.error("[uploadAvatarTemp] upload falló:", error);
     return { ok: false, message: "No se pudo subir la foto de perfil. Intenta de nuevo." };
   }
   return { ok: true, path };

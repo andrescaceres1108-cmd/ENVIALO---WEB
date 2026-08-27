@@ -15,6 +15,7 @@ const initialState: ActionState = { ok: false };
 export default function AuthForm({
   onSuccess,
   redirectTo,
+  initialTab = "signup",
 }: {
   onSuccess?: () => void;
   // Si se pasa, el login/signup exitoso navega server-side a esta ruta
@@ -22,8 +23,9 @@ export default function AuthForm({
   // hecho desde un useEffect en el cliente). Si se omite, no navega solo
   // — útil para flujos tipo modal que deben quedarse en la misma página.
   redirectTo?: string | null;
+  initialTab?: "signup" | "login";
 }) {
-  const [tab, setTab] = useState<"signup" | "login">("signup");
+  const [tab, setTab] = useState<"signup" | "login">(initialTab);
   const [pais, setPais] = useState<"usa" | "co">("usa");
   const [forgotOpen, setForgotOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");

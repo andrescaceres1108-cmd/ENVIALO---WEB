@@ -4,6 +4,9 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import ComingSoon from "@/components/ComingSoon";
+import { MODO_PRIVADO } from "@/lib/site-config";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,13 +49,31 @@ export const metadata: Metadata = {
     title,
     description,
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  robots: MODO_PRIVADO
+    ? { index: false, follow: false }
+    : { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// Con MODO_PRIVADO activo, solo la cuenta admin ve el sitio; el resto ve
+// "Próximamente". El chequeo usa cookies(), lo que vuelve dinámicas todas
+// las rutas mientras el candado esté puesto — aceptable en modo privado.
+async function esAdmin(): Promise<boolean> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", user.id)
+    .single();
+  return profile?.is_admin === true;
+}
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const mostrarSitio = !MODO_PRIVADO || (await esAdmin());
+
   return (
     <html
       lang="es"
@@ -60,9 +81,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body>
         <div className="bg-glow" aria-hidden="true"></div>
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        {mostrarSitio ? (
+          <>
+            <Header />
+            <main>{children}</main>
+            <Footer />
+          </>
+        ) : (
+          <ComingSoon />
+        )}
         <Analytics />
         <SpeedInsights />
       </body>

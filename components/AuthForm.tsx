@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   signUpAction,
   logInAction,
@@ -31,6 +31,12 @@ export default function AuthForm({
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarNombre, setAvatarNombre] = useState<string | null>(null);
+  // El input que viaja en el formulario (galería) y el de la cámara van
+  // separados porque solo el segundo lleva `capture`; ambos se disparan
+  // desde botones para que la persona elija cómo poner la foto.
+  const galeriaRef = useRef<HTMLInputElement>(null);
+  const camaraRef = useRef<HTMLInputElement>(null);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [resendPending, setResendPending] = useState(false);
   const [signupState, signupFormAction, signupPending] = useActionState(
@@ -63,12 +69,28 @@ export default function AuthForm({
     setResendMsg(res.message ?? null);
   }
 
-  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function mostrarAvatar(file: File | null) {
     setAvatarPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return file ? URL.createObjectURL(file) : null;
     });
+    setAvatarNombre(file?.name ?? null);
+  }
+
+  function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    mostrarAvatar(e.target.files?.[0] ?? null);
+  }
+
+  // La foto tomada con la cámara llega a un input aparte, así que se copia
+  // al input `avatar` (el único que se envía) antes de limpiar el de cámara.
+  function handleCamaraChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !galeriaRef.current) return;
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    galeriaRef.current.files = dt.files;
+    mostrarAvatar(file);
+    e.target.value = "";
   }
 
   return (
@@ -174,25 +196,54 @@ export default function AuthForm({
           </p>
 
           <div className="field">
-            <label htmlFor="avatar">Foto de perfil</label>
+            <label>Foto de perfil</label>
             <div className="avatar-field">
               <div className={`avatar-preview${avatarPreview ? "" : " avatar-preview-empty"}`}>
                 {avatarPreview && <img src={avatarPreview} alt="" />}
               </div>
-              <input
-                id="avatar"
-                name="avatar"
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                required
-                onChange={handleAvatarChange}
-              />
+              <div className="avatar-acciones">
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => camaraRef.current?.click()}
+                >
+                  Tomar foto
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => galeriaRef.current?.click()}
+                >
+                  Elegir de la galería
+                </button>
+              </div>
             </div>
+            <input
+              ref={galeriaRef}
+              id="avatar"
+              name="avatar"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              onChange={handleAvatarChange}
+            />
+            <input
+              ref={camaraRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              capture="user"
+              hidden
+              tabIndex={-1}
+              aria-hidden="true"
+              onChange={handleCamaraChange}
+            />
             {signupState.errors?.avatar && (
               <p className="field-error">{signupState.errors.avatar}</p>
             )}
             <p className="field-hint">
-              La foto es obligatoria y se mostrará en tus anuncios para darle más confianza a quien te contacte.
+              {avatarNombre
+                ? `Foto seleccionada: ${avatarNombre}`
+                : "La foto es obligatoria y se mostrará en tus anuncios para darle más confianza a quien te contacte."}
             </p>
           </div>
 

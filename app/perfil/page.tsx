@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import PerfilForm, { type PerfilInicial } from "@/components/PerfilForm";
+
+export const dynamic = "force-dynamic";
 
 export default async function PerfilPage() {
   const supabase = await createClient();
@@ -13,42 +16,27 @@ export default async function PerfilPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nombre, pais, telefono, cedula")
+    .select("nombre, pais, telefono, cedula, facebook, instagram, avatar_url")
     .eq("id", user.id)
     .single();
+
+  const perfil: PerfilInicial = {
+    nombre: profile?.nombre ?? "",
+    pais: profile?.pais === "co" ? "co" : "usa",
+    telefono: profile?.telefono ?? "",
+    cedula: profile?.cedula ?? null,
+    facebook: profile?.facebook ?? null,
+    instagram: profile?.instagram ?? null,
+    avatar_url: profile?.avatar_url ?? null,
+  };
 
   return (
     <>
       <div className="section-head">
         <h2>Tu perfil</h2>
-        <p>Información con la que creaste tu cuenta en SendGO.</p>
+        <p>Estos son los datos con los que creaste tu cuenta. Puedes editarlos cuando quieras.</p>
       </div>
-      <div className="card-form">
-        <div className="field">
-          <label>Nombre</label>
-          <p className="kv-value">{profile?.nombre ?? "—"}</p>
-        </div>
-        <div className="field">
-          <label>Correo</label>
-          <p className="kv-value">{user.email}</p>
-        </div>
-        <div className="field">
-          <label>País</label>
-          <p className="kv-value">
-            {profile?.pais === "co" ? "Colombia" : "Estados Unidos"}
-          </p>
-        </div>
-        <div className="field">
-          <label>Teléfono</label>
-          <p className="kv-value">{profile?.telefono ?? "—"}</p>
-        </div>
-        {profile?.cedula && (
-          <div className="field">
-            <label>Cédula</label>
-            <p className="kv-value">{profile.cedula}</p>
-          </div>
-        )}
-      </div>
+      <PerfilForm perfil={perfil} email={user.email ?? ""} />
     </>
   );
 }

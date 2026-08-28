@@ -12,6 +12,7 @@ import {
   loginSchema,
   forgotPasswordSchema,
   updatePasswordSchema,
+  perfilSchema,
   publicarSchema,
   reportSchema,
 } from "@/lib/validation";
@@ -376,6 +377,88 @@ export async function borrarCuentaAction(): Promise<{ ok: boolean; message?: str
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+export async function actualizarPerfilAction(
+  _prev: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false, message: "Debes iniciar sesión para editar tu perfil." };
+  }
+
+  const parsed = perfilSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return { ok: false, errors: firstErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { data } = parsed;
+
+  // Foto nueva (opcional): se sube directo a la ruta definitiva con
+  // upsert. Se agrega ?v= a la URL para romper la caché del navegador al
+  // reemplazar la imagen (la ruta del archivo no cambia).
+  const nuevaFoto = data.avatar && data.avatar.size > 0 ? data.avatar : null;
+  let avatarUrl: string | null = null;
+  if (nuevaFoto) {
+    const ext = AVATAR_EXT[nuevaFoto.type];
+    try {
+      const admin = createAdminClient();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await admin.storage
+        .from(AVATAR_BUCKET)
+        .upload(path, nuevaFoto, { contentType: nuevaFoto.type, upsert: true });
+      if (uploadError) {
+        return {
+          ok: false,
+          errors: { avatar: "No se pudo subir la nueva foto. Intenta de nuevo." },
+        };
+      }
+      // Limpieza best-effort si la foto anterior tenía otra extensión.
+      const otras = Object.values(AVATAR_EXT)
+        .filter((e) => e !== ext)
+        .map((e) => `${user.id}/avatar.${e}`);
+      await admin.storage.from(AVATAR_BUCKET).remove(otras);
+      const {
+        data: { publicUrl },
+      } = admin.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+      avatarUrl = `${publicUrl}?v=${Date.now()}`;
+    } catch {
+      return {
+        ok: false,
+        errors: { avatar: "No se pudo subir la nueva foto. Intenta de nuevo." },
+      };
+    }
+  }
+
+  const updates: Record<string, unknown> = {
+    nombre: data.nombre,
+    pais: data.pais,
+    telefono: data.telefono,
+    cedula: data.pais === "co" ? data.cedula : null,
+    facebook: data.facebook,
+    instagram: data.instagram,
+  };
+  if (avatarUrl) updates.avatar_url = avatarUrl;
+
+  const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+  if (error) {
+    return { ok: false, message: "No se pudieron guardar los cambios. Intenta de nuevo." };
+  }
+
+  // La foto va copiada en cada anuncio (mismo patrón que nombre_contacto):
+  // al cambiarla, se actualizan también los anuncios ya publicados.
+  if (avatarUrl) {
+    await supabase.from("anuncios").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
+  }
+
+  revalidatePath("/perfil");
+  revalidatePath("/anuncios");
+  return { ok: true, message: "Perfil actualizado." };
 }
 
 export async function publicarAnuncioAction(

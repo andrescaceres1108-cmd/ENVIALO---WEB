@@ -38,6 +38,47 @@ export const signupSchema = z
 
 export type SignupInput = z.infer<typeof signupSchema>;
 
+// Edición de perfil: mismos campos que el registro, pero sin contraseña
+// ni términos, y la foto es opcional (si no se sube una nueva, se
+// conserva la actual; un input file vacío llega como File de tamaño 0).
+export const perfilSchema = z
+  .object({
+    nombre: z.string().trim().min(2, "Ingresa tu nombre completo."),
+    pais: z.enum(["usa", "co"], { message: "Elige tu país." }),
+    telefono: z
+      .string()
+      .trim()
+      .min(7, "Ingresa un teléfono válido con código de país."),
+    cedula: z.string().trim().optional(),
+    facebook: z.string().trim().min(2, "Ingresa tu perfil o usuario de Facebook."),
+    instagram: z.string().trim().min(2, "Ingresa tu usuario de Instagram."),
+    avatar: z
+      .instanceof(File)
+      .optional()
+      .refine(
+        (f) => !f || f.size === 0 || f.size <= 4 * 1024 * 1024,
+        "La foto no puede pesar más de 4MB."
+      )
+      .refine(
+        (f) =>
+          !f ||
+          f.size === 0 ||
+          ["image/jpeg", "image/png", "image/webp"].includes(f.type),
+        "Formato no soportado: usa JPG, PNG o WEBP."
+      ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.pais === "co" && (!data.cedula || data.cedula.trim().length < 5)) {
+      ctx.addIssue({
+        code: "custom",
+        message: "La cédula es obligatoria para cuentas creadas desde Colombia.",
+        path: ["cedula"],
+      });
+    }
+  });
+
+export type PerfilInput = z.infer<typeof perfilSchema>;
+
 export const loginSchema = z.object({
   email: z.string().trim().email("Correo inválido."),
   password: z.string().min(1, "Ingresa tu contraseña."),

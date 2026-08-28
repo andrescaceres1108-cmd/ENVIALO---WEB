@@ -3,6 +3,7 @@ import {
   signupSchema,
   loginSchema,
   updatePasswordSchema,
+  perfilSchema,
   publicarSchema,
   reportSchema,
 } from "@/lib/validation";
@@ -67,6 +68,51 @@ describe("signupSchema", () => {
 
   it("rechaza si falta Facebook o Instagram", () => {
     const res = signupSchema.safeParse({ ...baseSignup, pais: "usa", facebook: "" });
+    expect(res.success).toBe(false);
+  });
+});
+
+const basePerfil = {
+  nombre: "Andrés G.",
+  telefono: "+1 703 555 0123",
+  facebook: "andres.gomez",
+  instagram: "@andresg",
+};
+
+describe("perfilSchema", () => {
+  it("acepta una edición sin foto nueva", () => {
+    const res = perfilSchema.safeParse({ ...basePerfil, pais: "usa" });
+    expect(res.success).toBe(true);
+  });
+
+  it("acepta un input de archivo vacío (no se cambió la foto)", () => {
+    const res = perfilSchema.safeParse({
+      ...basePerfil,
+      pais: "usa",
+      avatar: new File([], "", { type: "application/octet-stream" }),
+    });
+    expect(res.success).toBe(true);
+  });
+
+  it("rechaza una foto nueva con formato no soportado", () => {
+    const res = perfilSchema.safeParse({
+      ...basePerfil,
+      pais: "usa",
+      avatar: new File(["contenido"], "avatar.gif", { type: "image/gif" }),
+    });
+    expect(res.success).toBe(false);
+  });
+
+  it("sigue exigiendo cédula si el país es Colombia", () => {
+    const res = perfilSchema.safeParse({ ...basePerfil, pais: "co" });
+    expect(res.success).toBe(false);
+    if (!res.success) {
+      expect(res.error.flatten().fieldErrors.cedula?.[0]).toMatch(/cédula/i);
+    }
+  });
+
+  it("rechaza si se borran las redes sociales", () => {
+    const res = perfilSchema.safeParse({ ...basePerfil, pais: "usa", instagram: "" });
     expect(res.success).toBe(false);
   });
 });

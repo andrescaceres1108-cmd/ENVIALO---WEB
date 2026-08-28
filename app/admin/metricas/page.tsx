@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { listMetricasAction } from "@/lib/admin-actions";
+import AdminNav from "@/components/AdminNav";
 
 export const dynamic = "force-dynamic";
 
@@ -45,12 +46,11 @@ export default async function AdminMetricasPage() {
   return (
     <>
       <div className="section-head">
-        <h2>Métricas del embudo</h2>
-        <p>
-          Últimas 12 semanas, por semana y ruta.{" "}
-          <Link href="/admin">← Volver al panel</Link>
-        </p>
+        <h2>Embudo semanal</h2>
+        <p>Últimas 12 semanas, por semana y ruta.</p>
       </div>
+
+      <AdminNav activo="rutas" />
 
       {semanas.length === 0 ? (
         <div className="empty">

@@ -8,7 +8,7 @@ import { CIUDADES_COLOMBIA, DESTINOS_DMV } from "@/lib/ciudades-co";
 
 const initialState: ActionState = { ok: false };
 
-export default function PublicarForm() {
+export default function PublicarForm({ nombrePerfil }: { nombrePerfil: string }) {
   const router = useRouter();
   const [direccion, setDireccion] = useState<"usa-co" | "co-usa">("usa-co");
   const [ciudadCo, setCiudadCo] = useState<string>(CIUDADES_COLOMBIA[0]);
@@ -156,11 +156,15 @@ export default function PublicarForm() {
           )}
         </div>
         <div className="field">
-          <label htmlFor="nombre_contacto">Tu nombre</label>
-          <input id="nombre_contacto" name="nombre_contacto" placeholder="Ej: Andrés G." required />
-          {state.errors?.nombre_contacto && (
-            <p className="field-error">{state.errors.nombre_contacto}</p>
-          )}
+          <label>Tu nombre</label>
+          {/* El nombre que se muestra en el anuncio viene del perfil, no de
+              este formulario: así nadie puede publicar a nombre de otra
+              persona. El servidor ignora lo que llegue aquí. */}
+          <input type="hidden" name="nombre_contacto" value={nombrePerfil} />
+          <p className="kv-value">{nombrePerfil}</p>
+          <p className="field-hint">
+            Se toma de tu perfil. Puedes cambiarlo en <a href="/perfil">Tu perfil</a>.
+          </p>
         </div>
       </div>
 

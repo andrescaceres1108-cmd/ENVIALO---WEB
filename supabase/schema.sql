@@ -377,3 +377,39 @@ alter table public.events enable row level security;
 
 create index if not exists events_tipo_fecha_idx on public.events (tipo, fecha);
 create index if not exists events_anuncio_idx on public.events (anuncio_id);
+
+-- ---------- migración: cierre de escalada de privilegios en profiles ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query. IMPORTANTE.
+--
+-- El problema: la policy de UPDATE de `profiles` decía solo
+--   using (auth.uid() = id)
+-- sin `with check`. En Postgres, cuando una policy de UPDATE no declara
+-- `with check`, se reutiliza la expresión de `using` para validar la fila
+-- resultante. Como esa expresión solo compara el `id`, cualquier usuario
+-- autenticado podía actualizar CUALQUIER otra columna de su propia fila
+-- — incluida `is_admin` — con una sola llamada desde el navegador:
+--   supabase.from('profiles').update({ is_admin: true }).eq('id', <su id>)
+-- Eso le daba acceso al panel /admin: leer todos los perfiles (nombres,
+-- teléfonos, cédulas, redes de todos los usuarios), borrar cualquier
+-- anuncio y leer/descartar todos los reportes.
+--
+-- La solución de fondo son privilegios por columna: aunque la policy deje
+-- pasar la fila, Postgres rechaza el UPDATE si toca una columna sobre la
+-- que el rol no tiene permiso. `is_admin` queda fuera de la lista, así que
+-- solo el service role (backend) puede modificarla.
+revoke update on public.profiles from anon, authenticated;
+grant update (nombre, pais, telefono, cedula, facebook, instagram, avatar_url)
+  on public.profiles to authenticated;
+
+-- Además, se declara el `with check` explícito para no depender del
+-- comportamiento implícito de Postgres.
+drop policy if exists "profiles: el usuario actualiza su propio perfil" on public.profiles;
+create policy "profiles: el usuario actualiza su propio perfil"
+  on public.profiles for update
+  to authenticated
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- Nota: si en el futuro se agrega una columna editable por el usuario a
+-- `profiles`, hay que añadirla al `grant update (...)` de arriba o la
+-- edición de perfil fallará con "permission denied for table profiles".

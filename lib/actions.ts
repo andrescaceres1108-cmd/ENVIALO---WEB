@@ -27,11 +27,26 @@ async function getOrigin() {
   return `${proto}://${host}`;
 }
 
+// La IP se usa como llave del rate limiting, así que tiene que venir de una
+// fuente que el cliente no pueda inventar. `x-forwarded-for` SÍ es
+// falsificable: si el visitante manda su propio header, el proxy le agrega
+// la IP real al final, y quedarse con el primer valor (lo que se hacía
+// antes) devuelve justo la parte que escribió el atacante. Con eso se
+// obtiene una llave distinta en cada request y el límite de intentos deja
+// de existir — fuerza bruta de login y spam de correos sin freno.
+// Vercel expone `x-vercel-forwarded-for` y `x-real-ip`, que sobrescribe él
+// mismo; se prefieren esos y, como último recurso, se toma el ÚLTIMO valor
+// de la cadena (el que agregó el proxy más cercano, no el del cliente).
 async function getClientIp() {
   const h = await headers();
+  const confiable = h.get("x-vercel-forwarded-for") ?? h.get("x-real-ip");
+  if (confiable) return confiable.trim();
   const fwd = h.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0].trim();
-  return h.get("x-real-ip") ?? "unknown";
+  if (fwd) {
+    const partes = fwd.split(",").map((p) => p.trim()).filter(Boolean);
+    if (partes.length > 0) return partes[partes.length - 1];
+  }
+  return "unknown";
 }
 
 const RATE_LIMIT_MESSAGE =
@@ -172,7 +187,20 @@ export async function signUpAction(
     if (error.code === "over_email_send_rate_limit") {
       return { ok: false, message: EMAIL_RATE_LIMIT_MESSAGE };
     }
-    return { ok: false, message: error.message };
+    if (error.code === "weak_password") {
+      return {
+        ok: false,
+        errors: { password: "Elige una contraseña más segura." },
+      };
+    }
+    // El resto de errores de Supabase llegan en inglés y algunos revelan si
+    // un correo ya está registrado (enumeración de usuarios). Se responde
+    // en genérico y el detalle queda solo en los logs del servidor.
+    console.error("[signUpAction] error de Supabase:", error.code, error.message);
+    return {
+      ok: false,
+      message: "No se pudo crear la cuenta. Revisa los datos e intenta de nuevo.",
+    };
   }
 
   // Movemos la foto a su ruta definitiva (carpeta = user id) y la
@@ -228,8 +256,17 @@ export async function logInAction(
 
   const supabase = await createClient();
   const ip = await getClientIp();
-  const allowed = await checkRateLimit(supabase, `login:${ip}`, 10, 300);
-  if (!allowed) {
+  // Dos límites a la vez: por IP (frena a un atacante desde una máquina) y
+  // por cuenta (frena el ataque distribuido desde muchas IPs contra un
+  // mismo correo, que el límite por IP no detecta).
+  const allowedIp = await checkRateLimit(supabase, `login:${ip}`, 10, 300);
+  const allowedCuenta = await checkRateLimit(
+    supabase,
+    `login-cuenta:${parsed.data.email.toLowerCase()}`,
+    10,
+    900
+  );
+  if (!allowedIp || !allowedCuenta) {
     return { ok: false, message: RATE_LIMIT_MESSAGE };
   }
 
@@ -450,11 +487,12 @@ export async function actualizarPerfilAction(
     return { ok: false, message: "No se pudieron guardar los cambios. Intenta de nuevo." };
   }
 
-  // La foto va copiada en cada anuncio (mismo patrón que nombre_contacto):
-  // al cambiarla, se actualizan también los anuncios ya publicados.
-  if (avatarUrl) {
-    await supabase.from("anuncios").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
-  }
+  // El nombre y la foto van copiados en cada anuncio, así que al cambiarlos
+  // hay que propagarlos a los anuncios ya publicados; si no, el tablón
+  // seguiría mostrando los datos viejos del viajero.
+  const anunciosUpdate: Record<string, unknown> = { nombre_contacto: data.nombre };
+  if (avatarUrl) anunciosUpdate.avatar_url = avatarUrl;
+  await supabase.from("anuncios").update(anunciosUpdate).eq("user_id", user.id);
 
   revalidatePath("/perfil");
   revalidatePath("/anuncios");
@@ -495,20 +533,30 @@ export async function publicarAnuncioAction(
 
   const { whatsapp, ...anuncio } = parsed.data;
 
+  // El nombre y la foto se toman SIEMPRE del perfil, nunca de lo que venga
+  // en el formulario: si se aceptara el valor enviado, cualquiera podría
+  // publicar un anuncio a nombre de otra persona mostrando su propia foto
+  // verificada al lado. El nombre se cambia desde /perfil.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("avatar_url")
+    .select("nombre, avatar_url")
     .eq("id", user.id)
     .single();
 
   const { data: inserted, error } = await supabase
     .from("anuncios")
-    .insert({ ...anuncio, user_id: user.id, avatar_url: profile?.avatar_url ?? null })
+    .insert({
+      ...anuncio,
+      nombre_contacto: profile?.nombre ?? anuncio.nombre_contacto,
+      user_id: user.id,
+      avatar_url: profile?.avatar_url ?? null,
+    })
     .select("id")
     .single();
 
   if (error || !inserted) {
-    return { ok: false, message: error?.message ?? "No se pudo publicar el anuncio." };
+    console.error("[publicarAnuncioAction] insert anuncio:", error?.message);
+    return { ok: false, message: "No se pudo publicar el anuncio. Intenta de nuevo." };
   }
 
   const { error: contactoError } = await supabase
@@ -516,7 +564,12 @@ export async function publicarAnuncioAction(
     .insert({ anuncio_id: inserted.id, whatsapp });
 
   if (contactoError) {
-    return { ok: false, message: contactoError.message };
+    // El anuncio ya se creó pero se quedó sin WhatsApp: así aparecería
+    // publicado y sin forma de contactar al viajero. Se deshace para no
+    // dejar basura visible en el tablón.
+    console.error("[publicarAnuncioAction] insert contacto:", contactoError.message);
+    await supabase.from("anuncios").delete().eq("id", inserted.id).eq("user_id", user.id);
+    return { ok: false, message: "No se pudo publicar el anuncio. Intenta de nuevo." };
   }
 
   await registrarEvento({
@@ -558,22 +611,34 @@ export async function editarAnuncioAction(
 
   const { whatsapp, ...anuncio } = parsed.data;
 
+  // El nombre y la foto se toman SIEMPRE del perfil, nunca de lo que venga
+  // en el formulario: si se aceptara el valor enviado, cualquiera podría
+  // publicar un anuncio a nombre de otra persona mostrando su propia foto
+  // verificada al lado. El nombre se cambia desde /perfil.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("avatar_url")
+    .select("nombre, avatar_url")
     .eq("id", user.id)
     .single();
 
   const { data: updated, error } = await supabase
     .from("anuncios")
-    .update({ ...anuncio, avatar_url: profile?.avatar_url ?? null })
+    .update({
+      ...anuncio,
+      nombre_contacto: profile?.nombre ?? anuncio.nombre_contacto,
+      avatar_url: profile?.avatar_url ?? null,
+    })
     .eq("id", anuncioId)
     .eq("user_id", user.id)
     .select("id")
     .single();
 
   if (error || !updated) {
-    return { ok: false, message: error?.message ?? "No se pudo actualizar el anuncio." };
+    console.error("[editarAnuncioAction] update anuncio:", error?.message);
+    return {
+      ok: false,
+      message: "No se pudo actualizar el anuncio. Verifica que sea tuyo e intenta de nuevo.",
+    };
   }
 
   const { error: contactoError } = await supabase
@@ -582,7 +647,8 @@ export async function editarAnuncioAction(
     .eq("anuncio_id", anuncioId);
 
   if (contactoError) {
-    return { ok: false, message: contactoError.message };
+    console.error("[editarAnuncioAction] update contacto:", contactoError.message);
+    return { ok: false, message: "No se pudo actualizar el anuncio. Intenta de nuevo." };
   }
 
   revalidatePath("/anuncios");

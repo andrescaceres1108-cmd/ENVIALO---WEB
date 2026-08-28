@@ -205,16 +205,18 @@ export default function EditAnuncioModal({
               )}
             </div>
             <div className="field">
-              <label htmlFor="e_nombre_contacto">Tu nombre</label>
+              <label>Tu nombre</label>
+              {/* Igual que al publicar: el nombre sale del perfil y el
+                  servidor ignora lo que llegue por el formulario. */}
               <input
-                id="e_nombre_contacto"
+                type="hidden"
                 name="nombre_contacto"
-                defaultValue={anuncio.nombre_contacto}
-                required
+                value={anuncio.nombre_contacto}
               />
-              {state.errors?.nombre_contacto && (
-                <p className="field-error">{state.errors.nombre_contacto}</p>
-              )}
+              <p className="kv-value">{anuncio.nombre_contacto}</p>
+              <p className="field-hint">
+                Se toma de tu perfil.
+              </p>
             </div>
           </div>
 

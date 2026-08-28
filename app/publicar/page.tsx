@@ -12,13 +12,19 @@ export default async function PublicarPage() {
     redirect("/cuenta");
   }
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("nombre")
+    .eq("id", user.id)
+    .single();
+
   return (
     <>
       <div className="section-head">
         <h2>Publicar anuncio</h2>
         <p>¿Viajas pronto y te sobra espacio? Publica tu ruta y deja que te contacten.</p>
       </div>
-      <PublicarForm />
+      <PublicarForm nombrePerfil={profile?.nombre ?? ""} />
     </>
   );
 }

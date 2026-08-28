@@ -413,3 +413,29 @@ create policy "profiles: el usuario actualiza su propio perfil"
 -- Nota: si en el futuro se agrega una columna editable por el usuario a
 -- `profiles`, hay que añadirla al `grant update (...)` de arriba o la
 -- edición de perfil fallará con "permission denied for table profiles".
+
+-- ---------- migración: check_rate_limit deja de ser invocable por el cliente ----------
+-- Corre esto en Supabase Dashboard > SQL Editor > New query.
+--
+-- El problema: check_rate_limit() estaba concedida a `anon`, y la llave
+-- anónima viaja en el bundle del navegador. Es decir, cualquiera podía
+-- llamar la función con la llave de OTRA persona:
+--   rpc('check_rate_limit', { p_key: 'login-cuenta:victima@correo.com',
+--                             p_max: 10, p_window_seconds: 900 })
+-- Diez llamadas y la víctima se queda sin poder iniciar sesión durante 15
+-- minutos; repitiéndolo en bucle, indefinidamente. Denegación de servicio
+-- dirigida a una cuenta concreta.
+--
+-- El contador de intentos es un asunto del servidor, así que ahora solo lo
+-- puede tocar el service role (ver checkRateLimit() en lib/actions.ts, que
+-- pasó a usar el cliente admin).
+revoke execute on function public.check_rate_limit(text, int, int) from anon, authenticated, public;
+
+-- Postgres concede EXECUTE a PUBLIC por defecto al crear una función, así
+-- que el `grant ... to authenticated` original no impedía que `anon` la
+-- llamara. Se revoca a PUBLIC y se concede solo a quien corresponde.
+revoke execute on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;
+
+revoke execute on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated;

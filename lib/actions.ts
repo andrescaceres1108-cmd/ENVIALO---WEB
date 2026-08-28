@@ -59,22 +59,35 @@ const RATE_LIMIT_MESSAGE =
 const EMAIL_RATE_LIMIT_MESSAGE =
   "Se enviaron demasiados correos en poco tiempo. Espera unos minutos y vuelve a intentarlo.";
 
-// Envuelve la función SQL check_rate_limit() (ver supabase/schema.sql). Si
-// la migración todavía no se corrió (o hay un error de red), no bloqueamos
-// al usuario: preferimos dejar pasar antes que romper la app por esto.
-async function checkRateLimit(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  key: string,
-  max: number,
-  windowSeconds: number
-) {
-  const { data, error } = await supabase.rpc("check_rate_limit", {
-    p_key: key,
-    p_max: max,
-    p_window_seconds: windowSeconds,
-  });
-  if (error) return true;
-  return data === true;
+// Envuelve la función SQL check_rate_limit() (ver supabase/schema.sql).
+//
+// Corre SIEMPRE con el cliente admin (service role), nunca con el de la
+// sesión: la llave anónima está en el bundle del navegador, así que si la
+// función fuera invocable desde el cliente, cualquiera podría llamarla con
+// la llave de otra persona (ej. 'login-cuenta:victima@correo.com') y agotar
+// su contador para dejarla sin poder iniciar sesión. El contador solo lo
+// toca el servidor.
+//
+// Si la llamada falla (migración sin correr, error de red) no bloqueamos al
+// usuario —preferimos dejar pasar antes que tumbar el login—, pero queda
+// registrado en los logs porque implica que el freno anti-abuso no está
+// actuando.
+async function checkRateLimit(key: string, max: number, windowSeconds: number) {
+  try {
+    const { data, error } = await createAdminClient().rpc("check_rate_limit", {
+      p_key: key,
+      p_max: max,
+      p_window_seconds: windowSeconds,
+    });
+    if (error) {
+      console.error("[checkRateLimit] sin aplicar para", key, "->", error.message);
+      return true;
+    }
+    return data === true;
+  } catch (e) {
+    console.error("[checkRateLimit] sin aplicar para", key, "->", e);
+    return true;
+  }
 }
 
 export type ActionState = {
@@ -148,7 +161,7 @@ export async function signUpAction(
 
   const supabase = await createClient();
   const ip = await getClientIp();
-  const allowed = await checkRateLimit(supabase, `signup:${ip}`, 5, 3600);
+  const allowed = await checkRateLimit(`signup:${ip}`, 5, 3600);
   if (!allowed) {
     return { ok: false, message: RATE_LIMIT_MESSAGE };
   }
@@ -259,9 +272,8 @@ export async function logInAction(
   // Dos límites a la vez: por IP (frena a un atacante desde una máquina) y
   // por cuenta (frena el ataque distribuido desde muchas IPs contra un
   // mismo correo, que el límite por IP no detecta).
-  const allowedIp = await checkRateLimit(supabase, `login:${ip}`, 10, 300);
+  const allowedIp = await checkRateLimit(`login:${ip}`, 10, 300);
   const allowedCuenta = await checkRateLimit(
-    supabase,
     `login-cuenta:${parsed.data.email.toLowerCase()}`,
     10,
     900
@@ -301,7 +313,7 @@ export async function resendConfirmationAction(
 
   const supabase = await createClient();
   const ip = await getClientIp();
-  const allowed = await checkRateLimit(supabase, `resend:${ip}`, 3, 3600);
+  const allowed = await checkRateLimit(`resend:${ip}`, 3, 3600);
   if (!allowed) {
     return { ok: false, message: RATE_LIMIT_MESSAGE };
   }
@@ -338,7 +350,7 @@ export async function forgotPasswordAction(
 
   const supabase = await createClient();
   const ip = await getClientIp();
-  const allowed = await checkRateLimit(supabase, `forgot:${ip}`, 3, 3600);
+  const allowed = await checkRateLimit(`forgot:${ip}`, 3, 3600);
   if (!allowed) {
     return { ok: false, message: RATE_LIMIT_MESSAGE };
   }
@@ -512,7 +524,7 @@ export async function publicarAnuncioAction(
     return { ok: false, message: "Debes iniciar sesión para publicar un anuncio." };
   }
 
-  const allowed = await checkRateLimit(supabase, `publicar:${user.id}`, 5, 86400);
+  const allowed = await checkRateLimit(`publicar:${user.id}`, 5, 86400);
   if (!allowed) {
     return {
       ok: false,
@@ -698,6 +710,18 @@ export async function obtenerContactoAction(
     return { whatsapp: null, error: "Debes iniciar sesión para ver el contacto." };
   }
 
+  // Sin este freno, una sola cuenta puede recorrer el tablón y llevarse el
+  // WhatsApp de todos los viajeros de una sentada. El tope es holgado para
+  // el uso normal (quien busca envío abre unos pocos anuncios) y corta el
+  // raspado masivo, que además vaciaría de sentido el desbloqueo pago.
+  const allowed = await checkRateLimit(`contacto:${user.id}`, 30, 86400);
+  if (!allowed) {
+    return {
+      whatsapp: null,
+      error: "Viste muchos contactos hoy. Intenta de nuevo mañana.",
+    };
+  }
+
   const { data, error } = await supabase
     .from("anuncios_contacto")
     .select("whatsapp")
@@ -770,7 +794,7 @@ export async function reportarAnuncioAction(
     };
   }
 
-  const allowed = await checkRateLimit(supabase, `reportar:${user.id}`, 10, 86400);
+  const allowed = await checkRateLimit(`reportar:${user.id}`, 10, 86400);
   if (!allowed) {
     return { ok: false, message: RATE_LIMIT_MESSAGE };
   }

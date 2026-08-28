@@ -54,10 +54,6 @@ export default function ContactoModal({
 
         <div className="contact-rows">
           <div className="contact-row">
-            <span className="contact-label">WhatsApp</span>
-            <span className="contact-value">{whatsapp}</span>
-          </div>
-          <div className="contact-row">
             <span className="contact-label">Instagram</span>
             {instagram ? (
               igHref ? (

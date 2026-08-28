@@ -372,6 +372,39 @@ textarea { resize: vertical; min-height: 72px; }
   border: 1px solid var(--border-soft); flex-shrink: 0;
 }
 
+/* ---------- desbloqueo de contacto ---------- */
+.unlock-block { margin-top: 14px; }
+.unlock-desc { font-size: .74rem; color: var(--muted); margin-top: 8px; line-height: 1.4; }
+.unlock-price { font-weight: 700; color: var(--fg); font-size: 1.05rem; margin-top: 4px; }
+.unlock-safety { font-size: .68rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+
+.contact-modal { text-align: center; }
+.contact-avatar {
+  width: 88px; height: 88px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--border-soft); margin: 8px auto 0; display: block;
+}
+.contact-avatar-empty {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(115, 112, 255, .18); color: #d6d5ff;
+  font-size: 2rem; font-weight: 700;
+}
+.contact-name { font-weight: 700; color: var(--fg); font-size: 1.1rem; margin-top: 12px; }
+.contact-ruta { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+.contact-rows { margin-top: 18px; text-align: left; }
+.contact-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  padding: 10px 0; border-bottom: 1px dashed var(--border);
+}
+.contact-row:last-child { border-bottom: none; }
+.contact-label {
+  font-family: var(--font-geist-mono), monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--muted); flex-shrink: 0;
+}
+.contact-value { color: var(--fg); font-size: .9rem; word-break: break-word; text-align: right; }
+a.contact-value { color: #d6d5ff; }
+.contact-missing { color: var(--muted); font-style: italic; }
+.contact-wa-btn { margin-top: 18px; }
+
 .report-block { margin-top: 10px; }
 .report-toggle { font-size: .75rem; color: var(--muted); }
 .report-form { margin-top: 6px; display: flex; flex-direction: column; gap: 8px; }

@@ -534,7 +534,12 @@ export async function borrarAnuncioAction(
 
 export async function obtenerContactoAction(
   anuncioId: string
-): Promise<{ whatsapp: string | null; error?: string }> {
+): Promise<{
+  whatsapp: string | null;
+  instagram?: string | null;
+  facebook?: string | null;
+  error?: string;
+}> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -573,7 +578,26 @@ export async function obtenerContactoAction(
     });
   }
 
-  return { whatsapp: data.whatsapp };
+  // Redes sociales del dueño del anuncio. Van con el cliente admin porque
+  // profiles no es de lectura pública (RLS: solo el propio usuario y el
+  // admin). Best-effort: si falla, el WhatsApp se entrega igual.
+  let instagram: string | null = null;
+  let facebook: string | null = null;
+  if (anuncio) {
+    try {
+      const { data: perfil } = await createAdminClient()
+        .from("profiles")
+        .select("instagram, facebook")
+        .eq("id", anuncio.user_id)
+        .single();
+      instagram = perfil?.instagram ?? null;
+      facebook = perfil?.facebook ?? null;
+    } catch {
+      // sin redes; no bloqueamos la entrega del contacto
+    }
+  }
+
+  return { whatsapp: data.whatsapp, instagram, facebook };
 }
 
 export async function reportarAnuncioAction(

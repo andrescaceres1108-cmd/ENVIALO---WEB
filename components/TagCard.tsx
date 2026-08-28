@@ -9,6 +9,7 @@ import {
   reportarAnuncioAction,
 } from "@/lib/actions";
 import EditAnuncioModal from "@/components/EditAnuncioModal";
+import ContactoModal from "@/components/ContactoModal";
 
 export type AnuncioPublico = {
   id: string;
@@ -50,7 +51,12 @@ export default function TagCard({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [wa, setWa] = useState<string | null>(null);
+  const [contacto, setContacto] = useState<{
+    whatsapp: string;
+    instagram: string | null;
+    facebook: string | null;
+  } | null>(null);
+  const [contactoOpen, setContactoOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,29 +117,26 @@ export default function TagCard({
       onRequireAuth();
       return;
     }
-    // Abrimos la pestaña ya (dentro del gesto de clic del usuario) para que
-    // el navegador no la bloquee como popup; la redirigimos cuando tengamos
-    // el número.
-    const newTab = window.open("", "_blank");
+    // Ya desbloqueado en esta sesión: solo reabrimos la tarjeta (sin
+    // volver a llamar la acción, para no duplicar el evento de métricas).
+    if (contacto) {
+      setContactoOpen(true);
+      return;
+    }
     setLoading(true);
     setError(null);
     const res = await obtenerContactoAction(anuncio.id);
     setLoading(false);
     if (res.error || !res.whatsapp) {
       setError(res.error ?? "No se pudo obtener el contacto.");
-      newTab?.close();
       return;
     }
-    setWa(res.whatsapp);
-    const url = `https://wa.me/${res.whatsapp.replace(/[^0-9]/g, "")}`;
-    if (newTab) {
-      newTab.location.href = url;
-    } else {
-      // El navegador bloqueó la apertura anticipada; probamos igual con un
-      // clic directo del usuario (el enlace "Abrir WhatsApp" de abajo queda
-      // como respaldo).
-      window.open(url, "_blank", "noopener");
-    }
+    setContacto({
+      whatsapp: res.whatsapp,
+      instagram: res.instagram ?? null,
+      facebook: res.facebook ?? null,
+    });
+    setContactoOpen(true);
   }
 
   function handleReportToggle() {
@@ -238,21 +241,23 @@ export default function TagCard({
           <div className="tag-badge">Entrega a domicilio en cualquier ciudad del DMV</div>
         )}
         {anuncio.notas && <div className="tag-notes">&quot;{anuncio.notas}&quot;</div>}
-        <div className="tag-actions">
-          {wa ? (
-            <a
-              className="btn-wa"
-              href={`https://wa.me/${wa.replace(/[^0-9]/g, "")}`}
-              target="_blank"
-              rel="noopener"
-            >
-              Abrir WhatsApp
-            </a>
-          ) : (
-            <button type="button" className="btn-wa" onClick={handleContacto} disabled={loading}>
-              {loading ? "Cargando…" : "Contactar por WhatsApp"}
-            </button>
+        <div className="unlock-block">
+          <button type="button" className="btn-wa" onClick={handleContacto} disabled={loading}>
+            {loading ? "Cargando…" : contacto ? "Ver contacto del viajero" : "🔒 Desbloquear contacto"}
+          </button>
+          {!contacto && (
+            <>
+              <p className="unlock-desc">
+                Obtén acceso al WhatsApp, Instagram y datos de contacto del viajero.
+              </p>
+              <div className="unlock-price">$3.99</div>
+              <p className="unlock-safety">
+                🛡️ Para mayor seguridad, recomendamos realizar la operación dentro de SendGO.
+              </p>
+            </>
           )}
+        </div>
+        <div className="tag-actions">
           <span className="pill-name">
             {anuncio.avatar_url && (
               <img src={anuncio.avatar_url} alt="" className="tag-avatar" />
@@ -302,6 +307,15 @@ export default function TagCard({
         )}
       </div>
     </article>
+    {contactoOpen && contacto && (
+      <ContactoModal
+        anuncio={anuncio}
+        whatsapp={contacto.whatsapp}
+        instagram={contacto.instagram}
+        facebook={contacto.facebook}
+        onClose={() => setContactoOpen(false)}
+      />
+    )}
     {editing && whatsappEdit && (
       <EditAnuncioModal
         anuncio={anuncio}

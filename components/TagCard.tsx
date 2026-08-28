@@ -243,18 +243,12 @@ export default function TagCard({
         {anuncio.notas && <div className="tag-notes">&quot;{anuncio.notas}&quot;</div>}
         <div className="unlock-block">
           <button type="button" className="btn-wa" onClick={handleContacto} disabled={loading}>
-            {loading ? "Cargando…" : contacto ? "Ver contacto del viajero" : "🔒 Desbloquear contacto"}
+            {loading ? "Cargando…" : contacto ? "Ver contacto del viajero" : "🔒 Desbloquear contacto — $3.99"}
           </button>
           {!contacto && (
-            <>
-              <p className="unlock-desc">
-                Obtén acceso al WhatsApp, Instagram y datos de contacto del viajero.
-              </p>
-              <div className="unlock-price">$3.99</div>
-              <p className="unlock-safety">
-                🛡️ Para mayor seguridad, recomendamos realizar la operación dentro de SendGO.
-              </p>
-            </>
+            <p className="unlock-desc">
+              Obtén acceso al WhatsApp, Instagram y datos de contacto del viajero.
+            </p>
           )}
         </div>
         <div className="tag-actions">

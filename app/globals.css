@@ -375,8 +375,6 @@ textarea { resize: vertical; min-height: 72px; }
 /* ---------- desbloqueo de contacto ---------- */
 .unlock-block { margin-top: 14px; }
 .unlock-desc { font-size: .74rem; color: var(--muted); margin-top: 8px; line-height: 1.4; }
-.unlock-price { font-weight: 700; color: var(--fg); font-size: 1.05rem; margin-top: 4px; }
-.unlock-safety { font-size: .68rem; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 
 .contact-modal { text-align: center; }
 .contact-avatar {

@@ -68,17 +68,31 @@ header {
   cursor: pointer; user-select: none; text-decoration: none;
 }
 /* En el header la marca va a escala reducida. */
-.logo .marca-texto { font-size: 1.3rem; margin-top: 4px; }
+.logo .marca-texto { font-size: 1.3rem; }
 
-/* Lockup grande (portada "Próximamente"). El contenedor se encoge al ancho
-   de la palabra y el arco se estira al 100%, así que coinciden solos por
-   mucho que cambie la tipografía o el tamaño. */
-.marca { display: inline-flex; flex-direction: column; align-items: stretch; }
-.marca-arco { display: block; width: 100%; height: auto; }
+/* La caja de la marca la define SOLO la palabra: el arco va absoluto para que
+   su ancho intrínseco (el atributo width del SVG) no arrastre al contenedor.
+   Sin esto, en el header el SVG mide más que "SendGo" y el arco terminaba
+   sobresaliendo 11px por la derecha. */
+.marca { position: relative; display: inline-flex; flex-direction: column; }
+/* Los puntos de los extremos tocan el borde de su caja, pero las letras no:
+   Geist Bold deja aire a los lados y el letter-spacing negativo se come el de
+   la derecha. Medido a 48px: 2.50px de aire a la izquierda contra 0.33px a la
+   derecha, o sea el arco sobresalía 2px más por un lado y se leía corrido.
+   Los porcentajes son fracciones de la palabra, así que la corrección vale
+   igual a 3rem que a 1.3rem. */
+.marca-arco {
+  position: absolute; top: 0; left: 1.41%;
+  display: block; width: 98.4%; height: auto;
+}
 .marca-texto {
   font-family: var(--font-geist-sans), sans-serif;
   font-weight: 700; font-size: 3rem; line-height: 1.05;
-  letter-spacing: -.03em; color: var(--fg); margin-top: 10px;
+  letter-spacing: -.03em; color: var(--fg);
+  /* Hueco reservado para el arco: mide 0.907em de alto (es 0.984 × el ancho
+     de la palabra, que son 3.686em, y el viewBox es 4:1) más 0.2em de aire.
+     En em para que el espacio escale con la palabra igual que el arco. */
+  margin-top: 1.11em;
 }
 .marca-texto span { color: var(--accent); }
 .logo small {

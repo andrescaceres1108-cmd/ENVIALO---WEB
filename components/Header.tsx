@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import Logo from "@/components/Logo";
 import UserMenu from "@/components/UserMenu";
 
 export default async function Header() {
@@ -23,12 +24,16 @@ export default async function Header() {
   return (
     <header>
       <div className="header-in">
-        <Link href="/" className="logo">
-          <span className="logo-badge">S</span>
-          <span className="logo-text">
-            SendGO
-            <small>Tu envío. Su viaje.</small>
+        <Link href="/" className="logo" aria-label="SendGo — inicio">
+          {/* La marca va en su propia caja para que el arco se mida contra
+              "SendGo" y no contra el eslogan, que es más ancho. */}
+          <span className="marca">
+            <Logo className="marca-arco" />
+            <span className="marca-texto">
+              Send<span>Go</span>
+            </span>
           </span>
+          <small>Tu envío. Su viaje.</small>
         </Link>
         <nav>
           <Link href="/publicar">Publicar anuncio</Link>

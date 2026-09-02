@@ -19,7 +19,7 @@ export default function Home() {
           Conectamos tus envíos con personas que van a viajar.
         </p>
         <p className="sub">
-          SendGO conecta a viajeros con espacio en su maleta con personas que
+          SendGo conecta a viajeros con espacio en su maleta con personas que
           necesitan enviar algo entre Washington DC, Maryland, Virginia y
           cualquier ciudad de Colombia.
         </p>

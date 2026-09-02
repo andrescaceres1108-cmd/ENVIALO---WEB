@@ -1,13 +1,42 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "SendGO — Envíos entre USA y Colombia con viajeros";
+export const alt = "SendGo — Envíos entre USA y Colombia con viajeros";
 export const size = {
   width: 1200,
   height: 630,
 };
 export const contentType = "image/png";
 
+// El arco de la marca, con la misma geometría que components/Logo.tsx pero
+// resuelto con divs redondos: Satori (el motor de ImageResponse) no rasteriza
+// SVG importado, así que la forma se arma con posiciones absolutas.
+const PUNTOS = 11;
+const APERTURA = 40;
+const ESCALA = 3.9;
+
+function mezclar(t: number) {
+  const c = (a: number, b: number) => Math.round(a + (b - a) * t);
+  return `rgb(${c(255, 115)}, ${c(255, 112)}, 255)`;
+}
+
+function arco() {
+  return Array.from({ length: PUNTOS }, (_, i) => {
+    const t = i / (PUNTOS - 1);
+    const rad = ((-90 - APERTURA + 2 * APERTURA * t) * Math.PI) / 180;
+    const extremo = i === 0 || i === PUNTOS - 1;
+    const r = (extremo ? 6 : 2.6) * ESCALA;
+    return {
+      left: (60 + 84 * Math.cos(rad)) * ESCALA - r,
+      top: (87 + 84 * Math.sin(rad)) * ESCALA - r,
+      d: r * 2,
+      color: mezclar(t),
+    };
+  });
+}
+
 export default function Image() {
+  const puntos = arco();
+
   return new ImageResponse(
     (
       <div
@@ -37,21 +66,49 @@ export default function Image() {
             letterSpacing: 4,
             textTransform: "uppercase",
             color: "#7370ff",
-            marginBottom: 32,
+            marginBottom: 40,
           }}
         >
           USA · Colombia
         </div>
+
+        <div
+          style={{
+            position: "relative",
+            display: "flex",
+            width: 120 * ESCALA,
+            height: 30 * ESCALA,
+          }}
+        >
+          {puntos.map((p, i) => (
+            <div
+              key={i}
+              style={{
+                position: "absolute",
+                left: p.left,
+                top: p.top,
+                width: p.d,
+                height: p.d,
+                borderRadius: p.d,
+                background: p.color,
+              }}
+            />
+          ))}
+        </div>
+
         <div
           style={{
             display: "flex",
             fontSize: 140,
             fontWeight: 700,
             letterSpacing: -2,
+            marginTop: 4,
           }}
         >
-          SendGO
+          <span>Send</span>
+          <span style={{ color: "#7370ff" }}>Go</span>
         </div>
+
         <div
           style={{
             display: "flex",

@@ -60,28 +60,31 @@ header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 14px 20px; gap: 12px;
 }
+/* Lockup vertical: el arco "ruta punto a punto" corona la palabra. El ancho
+   del arco está calculado para coincidir con el de "SendGo", que es lo que
+   hace que el conjunto se lea como una sola pieza. */
 .logo {
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; user-select: none;
-  text-decoration: none;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 3px;
+  cursor: pointer; user-select: none; text-decoration: none;
 }
-.logo-badge {
-  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
-  background: var(--fg); color: var(--bg);
-  display: flex; align-items: center; justify-content: center;
+/* En el header la marca va a escala reducida. */
+.logo .marca-texto { font-size: 1.3rem; margin-top: 4px; }
+
+/* Lockup grande (portada "Próximamente"). El contenedor se encoge al ancho
+   de la palabra y el arco se estira al 100%, así que coinciden solos por
+   mucho que cambie la tipografía o el tamaño. */
+.marca { display: inline-flex; flex-direction: column; align-items: stretch; }
+.marca-arco { display: block; width: 100%; height: auto; }
+.marca-texto {
   font-family: var(--font-geist-sans), sans-serif;
-  font-weight: 700; font-size: .95rem;
+  font-weight: 700; font-size: 3rem; line-height: 1.05;
+  letter-spacing: -.03em; color: var(--fg); margin-top: 10px;
 }
-.logo-text {
-  display: flex; flex-direction: column; line-height: 1.15;
-  font-family: var(--font-geist-sans), sans-serif;
-  font-weight: 600; font-size: 1.1rem; letter-spacing: -.01em;
-  color: var(--fg);
-}
+.marca-texto span { color: var(--accent); }
 .logo small {
   display: block; font-family: var(--font-geist-mono), monospace;
-  font-size: .58rem; font-weight: 400; letter-spacing: .14em;
-  color: var(--muted); text-transform: uppercase; margin-top: 3px;
+  font-size: .52rem; font-weight: 400; letter-spacing: .14em;
+  color: var(--muted); text-transform: uppercase;
 }
 nav { display: flex; gap: 8px; flex-wrap: wrap; }
 nav a, nav button {

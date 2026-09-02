@@ -1,4 +1,5 @@
 import AuthForm from "@/components/AuthForm";
+import Logo from "@/components/Logo";
 
 // Página que ve todo el mundo (menos el admin) mientras el sitio está en
 // modo privado (ver lib/site-config.ts). El acceso del administrador va
@@ -8,7 +9,12 @@ export default function ComingSoon() {
   return (
     <main>
       <div className="empty" style={{ marginTop: 80, marginBottom: 40 }}>
-        <div className="big">SendGO</div>
+        <span className="marca">
+          <Logo className="marca-arco" />
+          <span className="marca-texto">
+            Send<span>Go</span>
+          </span>
+        </span>
         <p style={{ maxWidth: 480, margin: "12px auto 0" }}>
           Estamos preparando el lanzamiento. Muy pronto vas a poder conectar
           viajeros con espacio en su maleta con personas que necesitan enviar

@@ -92,7 +92,7 @@ export default async function AdminPage({
         <Kpi
           etiqueta="Ingreso potencial"
           valor={formatearDinero(kpis.ingresoPotencial)}
-          pie={`${formatearNumero(kpis.contactos.valor)} × ${formatearDinero(PRECIO_DESBLOQUEO_USD)}. Hoy no se cobra.`}
+          pie={`${formatearNumero(kpis.contactos.valor)} × ${formatearDinero(PRECIO_DESBLOQUEO_USD)} si se cobrara. El desbloqueo es gratis.`}
         />
         <Kpi
           etiqueta="Anuncios publicados"
@@ -112,10 +112,11 @@ export default async function AdminPage({
       </div>
 
       {kpis.ingresoPotencial > 0 && (
-        <Aviso tono="alerta">
-          El botón muestra <strong>{formatearDinero(PRECIO_DESBLOQUEO_USD)}</strong> pero no hay
-          pasarela de pago conectada: esos {formatearDinero(kpis.ingresoPotencial)} no se cobraron.
-          Es dinero que la plataforma ya generó en valor y está dejando sobre la mesa.
+        <Aviso tono="info">
+          El desbloqueo es <strong>gratis</strong> a propósito mientras se construye la oferta de
+          viajeros. Los {formatearDinero(kpis.ingresoPotencial)} son la referencia de lo que
+          valdrían esos contactos a {formatearDinero(PRECIO_DESBLOQUEO_USD)}: la señal para volver
+          a cobrar es que esta cifra crezca con anuncios de sobra en el tablón.
         </Aviso>
       )}
 

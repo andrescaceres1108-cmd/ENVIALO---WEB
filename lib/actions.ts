@@ -713,7 +713,8 @@ export async function obtenerContactoAction(
   // Sin este freno, una sola cuenta puede recorrer el tablón y llevarse el
   // WhatsApp de todos los viajeros de una sentada. El tope es holgado para
   // el uso normal (quien busca envío abre unos pocos anuncios) y corta el
-  // raspado masivo, que además vaciaría de sentido el desbloqueo pago.
+  // raspado masivo. Importa más ahora que el desbloqueo es gratis: sin cobro
+  // de por medio, el único costo de raspar el tablón es crear una cuenta.
   const allowed = await checkRateLimit(`contacto:${user.id}`, 30, 86400);
   if (!allowed) {
     return {

@@ -1,8 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin-guard";
 
-// Precio que muestra el botón de desbloqueo. Hoy NO se cobra (no hay
-// pasarela), así que el dinero que sale del tablero es potencial, no real.
+// Precio de referencia para valorar los contactos. El desbloqueo es GRATIS a
+// propósito mientras se construye la oferta de viajeros: cobrar por contactar
+// a uno de dos anuncios espanta a los pocos usuarios que llegan. Este número
+// solo sirve para responder "¿cuánto valdría esto si cobráramos?" en el
+// tablero; no se le cobra a nadie y no hay pasarela conectada.
 export const PRECIO_DESBLOQUEO_USD = 3.99;
 
 export const PERIODOS = [7, 30, 90] as const;

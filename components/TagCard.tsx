@@ -243,11 +243,16 @@ export default function TagCard({
         {anuncio.notas && <div className="tag-notes">&quot;{anuncio.notas}&quot;</div>}
         <div className="unlock-block">
           <button type="button" className="btn-wa" onClick={handleContacto} disabled={loading}>
-            {loading ? "Cargando…" : contacto ? "Ver contacto del viajero" : "🔒 Desbloquear contacto — $3.99"}
+            {loading
+              ? "Cargando…"
+              : contacto
+                ? "Ver contacto del viajero"
+                : "🔒 Desbloquear contacto gratis"}
           </button>
           {!contacto && (
             <p className="unlock-desc">
-              Obtén acceso al WhatsApp, Instagram y datos de contacto del viajero.
+              WhatsApp, Instagram y datos de contacto del viajero.
+              {!isAuthenticated && " Solo necesitas crear una cuenta."}
             </p>
           )}
         </div>
